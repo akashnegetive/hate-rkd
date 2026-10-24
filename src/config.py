@@ -38,6 +38,7 @@ class Config:
     # ---- models -----------------------------------------------------------
     teacher_name: str = "bert-base-uncased"
     student_name: str = "distilbert-base-uncased"
+    pilot: bool = False              # True -> from-scratch CPU models (see PILOT below)
 
     # ---- losses -----------------------------------------------------------
     hard_loss: str = "focal"         # focal | ce
@@ -87,6 +88,12 @@ PRESETS = {
                   teacher_bs=16, student_bs=16, lr=3e-3, fp16=False,
                   teacher_name="smoke-teacher", student_name="smoke-student"),
 }
+
+
+# CPU pilot study: no pretrained weights / no GPU available.
+# Same pipeline and losses; small transformers trained from scratch.
+PILOT = dict(teacher_name="scratch-teacher", student_name="scratch-student",
+             lr=5e-4, epochs=6, max_len=64, fp16=False)
 
 
 # Named methods = presets of switches. Use them with --method.

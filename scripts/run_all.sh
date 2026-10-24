@@ -7,6 +7,7 @@
 #   bash scripts/run_all.sh se_ablation# ~1 h            - ablation table
 #   bash scripts/run_all.sh dv_main    # ~6 h (5 folds)  - set FOLDS="0" for ~1.2 h
 #   bash scripts/run_all.sh tables     # aggregate everything into runs/tables.md
+#   bash scripts/run_all.sh pilot      # CPU-only pilot, from-scratch models (~3-4 h)
 #
 # Teachers are cached in runs/teachers/ and re-used automatically, so
 # ablations that only change the student loss do NOT retrain BERT.
@@ -62,10 +63,26 @@ dv_ablation)
   $PY --dataset dv --method rkd --kd_gate true --kd_revise true --kd_cb true --fold $f --run_name dv_abl_kd_only_f${f}_s$s --out_dir $OUT
   ;;
 
+pilot)   # CPU-only pilot on the REAL datasets with from-scratch models (no GPU / no BERT weights)
+  P="$PY --pilot true --out_dir ${OUT}_pilot"
+  for m in rkd ours baseline; do $P --dataset se --method $m --seed 42 --run_name se_${m}_s42; done
+  $P --dataset se --method ours --kd_gate false --kd_revise false --kd_cb false --run_name se_abl_spn_only_s42
+  $P --dataset se --method rkd  --kd_gate true  --kd_revise true  --kd_cb true  --run_name se_abl_kd_only_s42
+  $P --dataset se --method ours --kd_gate false   --run_name se_abl_no_gate_s42
+  $P --dataset se --method ours --kd_revise false --run_name se_abl_no_revise_s42
+  $P --dataset se --method ours --kd_cb false     --run_name se_abl_no_cb_s42
+  $P --dataset se --method ours --kd_gate false --lam 0.5 --run_name se_abl_lam05_s42
+  for m in rkd ours baseline; do $P --dataset dv --method $m --fold 0 --seed 42 --run_name dv_${m}_f0_s42; done
+  $P --dataset dv --method ours --kd_gate false --kd_revise false --kd_cb false --fold 0 --run_name dv_abl_spn_only_f0_s42
+  $P --dataset dv --method rkd  --kd_gate true  --kd_revise true  --kd_cb true  --fold 0 --run_name dv_abl_kd_only_f0_s42
+  for s in 1 2; do for m in rkd ours baseline; do $P --dataset se --method $m --seed $s --run_name se_${m}_s$s; done; done
+  python scripts/make_tables.py --runs ${OUT}_pilot --compare se_rkd se_ours --compare se_baseline se_ours
+  ;;
+
 tables)
   python scripts/make_tables.py --runs $OUT --compare se_rkd se_ours --compare se_baseline se_ours
   ;;
 
 *)
-  echo "usage: $0 {smoke|se_main|se_ablation|dv_main|dv_ablation|tables}"; exit 1 ;;
+  echo "usage: $0 {smoke|se_main|se_ablation|dv_main|dv_ablation|pilot|tables}"; exit 1 ;;
 esac

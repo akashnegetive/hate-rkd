@@ -28,7 +28,7 @@ import torch
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 from src.augment import round_one                                   # noqa: E402
-from src.config import METHODS, PRESETS, Config                     # noqa: E402
+from src.config import METHODS, PILOT, PRESETS, Config                     # noqa: E402
 from src.data import load_cross_eval_set, load_dataset_splits       # noqa: E402
 from src.evaluate import evaluate_all                               # noqa: E402
 from src.models import build_model, build_tokenizer, load_finetuned  # noqa: E402
@@ -58,7 +58,8 @@ def parse_args():
 def make_config(args):
     cfg = Config()
     dataset = args.dataset or cfg.dataset
-    for k, v in {**PRESETS[dataset], **METHODS[args.method]}.items():
+    pilot = PILOT if args.pilot else {}
+    for k, v in {**PRESETS[dataset], **METHODS[args.method], **pilot}.items():
         setattr(cfg, k, v)
     for f in fields(Config):
         v = getattr(args, f.name, None)
@@ -127,7 +128,7 @@ def main():
             teacher, tok = load_finetuned(t_dir)
         else:
             log(f"[teacher] training {cfg.teacher_name} with {cfg.hard_loss} loss")
-            tok = build_tokenizer(cfg.teacher_name)
+            tok = build_tokenizer(cfg.teacher_name, data["train"]["text"], f"{cfg.dataset}_f{cfg.fold}")
             teacher = build_model(cfg.teacher_name, tok)
             teacher, hist = train_model(cfg, teacher, tok, train, val, cfg.teacher_bs, log=log)
             teacher.save_pretrained(t_dir)
@@ -151,7 +152,7 @@ def main():
 
     log(f"[student] training {cfg.student_name}  kd={cfg.use_kd} gate={cfg.kd_gate} "
         f"revise={cfg.kd_revise} cb={cfg.kd_cb} lambda={cfg.lam} tau={cfg.tau}")
-    s_tok = build_tokenizer(cfg.student_name)
+    s_tok = build_tokenizer(cfg.student_name, data["train"]["text"], f"{cfg.dataset}_f{cfg.fold}")
     student = build_model(cfg.student_name, s_tok)
     student, hist = train_model(cfg, student, s_tok, train, val, cfg.student_bs,
                                 teacher_logits=t_logits, log=log)

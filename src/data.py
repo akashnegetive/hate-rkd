@@ -3,15 +3,15 @@
 SE  = SemEval-2019 Task 5 (HatEval), English, sub-task A (hate vs non-hate).
       9000 train / 1000 dev / 2970 test - the official split.
       Source priority: local CSVs in data/hateval/ (original release, raw text)
-      -> HuggingFace `cardiffnlp/tweet_eval`, config `hate` (same split; user
-      names are already anonymised to "@user").
+      -> TweetEval `hate` files (same split; user names anonymised to "@user"),
+         read from data/tweeteval_hate/ or downloaded from GitHub.
 
 DV  = Davidson et al. 2017 (24,783 tweets, class 0 = hate, 1 = offensive,
       2 = neither). Following the paper, hate (1,430) vs non-hate (23,353).
       No official split -> stratified 5-fold CV; 10 % of each training fold
       is held out as validation for model selection.
-      Source priority: data/davidson/labeled_data.csv -> HuggingFace
-      `tdavidson/hate_speech_offensive`.
+      Source priority: data/davidson/labeled_data.csv, downloaded from the
+      authors' GitHub repository if missing.
 
 smoke = small synthetic corpus used to test the code offline.
 
@@ -20,9 +20,22 @@ with label 1 = hate.
 """
 import os
 import random
+import urllib.request
 
 import pandas as pd
 from sklearn.model_selection import StratifiedKFold, train_test_split
+
+
+TWEETEVAL_URL = "https://raw.githubusercontent.com/cardiffnlp/tweeteval/main/datasets/hate/{}"
+DAVIDSON_URL = ("https://raw.githubusercontent.com/t-davidson/hate-speech-and-offensive-language/"
+                "master/data/labeled_data.csv")
+
+
+def _download(url, path):
+    if not os.path.exists(path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        urllib.request.urlretrieve(url, path)
+    return path
 
 
 def _split(texts, labels):
@@ -40,23 +53,24 @@ def load_se(data_dir="data"):
             df = pd.read_csv(os.path.join(local, fname))
             out[split] = _split(df["text"], df["HS"])
         return out
-    from datasets import load_dataset
-    ds = load_dataset("cardiffnlp/tweet_eval", "hate")
-    return {"train": _split(ds["train"]["text"], ds["train"]["label"]),
-            "val": _split(ds["validation"]["text"], ds["validation"]["label"]),
-            "test": _split(ds["test"]["text"], ds["test"]["label"])}
+    out = {}
+    for split in ("train", "val", "test"):
+        files = []
+        for kind in ("text", "labels"):
+            name = f"{split}_{kind}.txt"
+            files.append(_download(TWEETEVAL_URL.format(name), os.path.join(data_dir, "tweeteval_hate", name)))
+        with open(files[0], encoding="utf-8") as ft, open(files[1]) as fl:
+            texts = [line.rstrip("\n") for line in ft]
+            labels = [int(line) for line in fl]
+        out[split] = _split(texts, labels)
+    return out
 
 
 # --------------------------------------------------------------------------
 # Davidson
 # --------------------------------------------------------------------------
 def _dv_frame(data_dir="data"):
-    local = os.path.join(data_dir, "davidson", "labeled_data.csv")
-    if os.path.exists(local):
-        df = pd.read_csv(local)
-    else:
-        from datasets import load_dataset
-        df = load_dataset("tdavidson/hate_speech_offensive")["train"].to_pandas()
+    df = pd.read_csv(_download(DAVIDSON_URL, os.path.join(data_dir, "davidson", "labeled_data.csv")))
     df = df[["tweet", "class"]].rename(columns={"tweet": "text"})
     df["label"] = (df["class"] == 0).astype(int)
     return df.reset_index(drop=True)
