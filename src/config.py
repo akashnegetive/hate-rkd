@@ -108,6 +108,9 @@ METHODS = {
     # our full method
     "ours": dict(preprocess="spn", use_r1=True, use_r2=True, hard_loss="focal",
                  use_kd=True, kd_gate=True, kd_revise=True, kd_cb=True),
+    # ours with emoji->text only (hashtags removed as in the paper)
+    "ours_emoji": dict(preprocess="spn_emoji", use_r1=True, use_r2=True, hard_loss="focal",
+                       use_kd=True, kd_gate=True, kd_revise=True, kd_cb=True),
     # ours + hashtag dropout (shortcut regularisation for hashtags)
     "ours_hd": dict(preprocess="spn", hashtag_dropout=0.5, use_r1=True, use_r2=True,
                     hard_loss="focal", use_kd=True, kd_gate=True, kd_revise=True, kd_cb=True),

@@ -65,20 +65,20 @@ dv_ablation)
 
 pilot)   # CPU-only pilot on the REAL datasets with from-scratch models (no GPU / no BERT weights)
   P="$PY --pilot true --out_dir ${OUT}_pilot"
-  for m in rkd ours ours_hd baseline; do $P --dataset se --method $m --seed 42 --run_name se_${m}_s42; done
+  for m in rkd ours ours_emoji ours_hd baseline; do $P --dataset se --method $m --seed 42 --run_name se_${m}_s42; done
   # preprocessing ablation with the paper's KD loss (isolates N1 variants)
   $P --dataset se --method rkd --preprocess spn                       --run_name se_abl_spn_paperkd_s42
   $P --dataset se --method rkd --preprocess spn --hashtag_dropout 0.5 --run_name se_abl_spnhd_paperkd_s42
   $P --dataset se --method rkd --preprocess spn_emoji                 --run_name se_abl_emoji_paperkd_s42
   # KD-loss ablation with the paper's preprocessing (isolates N2 + N3)
   $P --dataset se --method rkd --kd_gate true --kd_revise true --kd_cb true --run_name se_abl_kd_only_s42
-  # leave-one-out from ours_hd
-  $P --dataset se --method ours_hd --kd_gate false   --run_name se_abl_hd_no_gate_s42
-  $P --dataset se --method ours_hd --kd_revise false --run_name se_abl_hd_no_revise_s42
-  $P --dataset se --method ours_hd --kd_cb false     --run_name se_abl_hd_no_cb_s42
-  for m in rkd ours_hd ours baseline; do $P --dataset dv --method $m --fold 0 --run_name dv_${m}_f0_s42; done
-  for s in 1 2; do for m in rkd ours_hd ours baseline; do $P --dataset se --method $m --seed $s --run_name se_${m}_s$s; done; done
-  python scripts/make_tables.py --runs ${OUT}_pilot --compare se_rkd se_ours_hd --compare se_rkd se_ours --compare se_baseline se_ours_hd
+  # leave-one-out from ours_emoji
+  $P --dataset se --method ours_emoji --kd_gate false   --run_name se_abl_emo_no_gate_s42
+  $P --dataset se --method ours_emoji --kd_revise false --run_name se_abl_emo_no_revise_s42
+  $P --dataset se --method ours_emoji --kd_cb false     --run_name se_abl_emo_no_cb_s42
+  for m in rkd ours_emoji ours_hd baseline; do $P --dataset dv --method $m --fold 0 --run_name dv_${m}_f0_s42; done
+  for s in 1 2; do for m in rkd ours_emoji ours_hd baseline; do $P --dataset se --method $m --seed $s --run_name se_${m}_s$s; done; done
+  python scripts/make_tables.py --runs ${OUT}_pilot --compare se_rkd se_ours_emoji --compare se_rkd se_ours_hd --compare se_baseline se_ours_emoji
   ;;
 
 tables)
