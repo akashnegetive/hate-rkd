@@ -26,7 +26,8 @@ class Config:
     # none   : raw text (BERT / DistilBERT baselines)
     # remove : paper's 6-step denoising (deletes emojis + hashtags)
     # spn    : OURS - semantic-preserving normalisation (emoji->words, #hashtag->words)
-    preprocess: str = "spn"
+    preprocess: str = "spn"          # none | remove | spn | spn_emoji
+    hashtag_dropout: float = 0.0     # OURS: drop each hashtag w.p. p during training (spn only)
 
     # ---- dual-round augmentation (paper Alg. 1 and Alg. 2) ----------------
     use_r1: bool = True              # offline character-level perturbation
@@ -107,4 +108,7 @@ METHODS = {
     # our full method
     "ours": dict(preprocess="spn", use_r1=True, use_r2=True, hard_loss="focal",
                  use_kd=True, kd_gate=True, kd_revise=True, kd_cb=True),
+    # ours + hashtag dropout (shortcut regularisation for hashtags)
+    "ours_hd": dict(preprocess="spn", hashtag_dropout=0.5, use_r1=True, use_r2=True,
+                    hard_loss="focal", use_kd=True, kd_gate=True, kd_revise=True, kd_cb=True),
 }

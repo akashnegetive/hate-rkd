@@ -16,6 +16,16 @@ Two pipelines are implemented so they can be compared fairly:
        htg-rem -> htg-seg : #hashtag -> segmented words     ("#BanIslam" -> "ban islam")
    Motivation: in the paper's own error analysis (Table IX, Exp. 4) the hateful
    intent lives in "#StopImmigration #BanIslam"; the paper's denoiser deletes it.
+
+3. Hashtag dropout (training only). Hashtags are also TOPIC SHORTCUTS: in the
+   SemEval train split #buildthatwall is 100 % hate, in the test split 24 %.
+   With mark=True, segmented hashtags are wrapped in sentinels
+   "\u27e6 ... \u27e7"; during training `drop_marked` deletes each wrapped
+   hashtag with probability p, so the model must also learn from the body text.
+   At evaluation time the text is used unmarked (all hashtags kept).
+
+4. `spn_emoji`: emojis -> text, hashtags removed as in the paper (isolates the
+   effect of emojis from the effect of hashtags).
 """
 import html
 import re
@@ -40,7 +50,9 @@ HASHTAG_RE = re.compile(r"#(\w+)")
 REPEAT_PUNCT_RE = re.compile(r"([^\w\s])\1+")          # "?????" -> "?"
 REPEAT_CHAR_RE = re.compile(r"([a-zA-Z])\1{2,}")       # "soooo" -> "soo"
 CAMEL_RE = re.compile(r"[A-Z]+(?=[A-Z][a-z])|[A-Z]?[a-z]+|[A-Z]+|\d+")
-NON_TEXT_RE = re.compile(r"[^A-Za-z0-9\s.,!?'\"\-:;()&]")  # what sps-rem deletes
+HT_OPEN, HT_CLOSE = "\u27e6", "\u27e7"                  # hashtag-span sentinels
+NON_TEXT_RE = re.compile(r"[^A-Za-z0-9\s.,!?'\"\-:;()&\u27e6\u27e7]")  # what sps-rem deletes
+MARKED_RE = re.compile("\u27e6([^\u27e7]*)\u27e7")
 SPACES_RE = re.compile(r"\s+")
 
 
@@ -110,9 +122,20 @@ def segment_hashtag(tag: str) -> str:
     return tag.lower()
 
 
-def hashtags_to_words(text: str) -> str:
+def hashtags_to_words(text: str, mark: bool = False) -> str:
     """htg-seg: '#BanIslam' -> 'ban islam' (the '#' itself carries no meaning)."""
-    return HASHTAG_RE.sub(lambda m: " " + segment_hashtag(m.group(1)) + " ", text)
+    o, c = (HT_OPEN, HT_CLOSE) if mark else ("", "")
+    return HASHTAG_RE.sub(lambda m: " " + o + segment_hashtag(m.group(1)) + c + " ", text)
+
+
+def strip_marks(text: str) -> str:
+    """Marked text -> normal text (all hashtags kept)."""
+    return clean_spaces(text.replace(HT_OPEN, " ").replace(HT_CLOSE, " "))
+
+
+def drop_marked(text: str, p: float, rng) -> str:
+    """Hashtag dropout: delete each marked hashtag with probability p."""
+    return clean_spaces(MARKED_RE.sub(lambda m: " " if rng.random() < p else " " + m.group(1) + " ", text))
 
 
 # --------------------------------------------------------------------------
@@ -129,25 +152,39 @@ def denoise_remove(text: str) -> str:
     return clean_spaces(text)
 
 
-def denoise_spn(text: str) -> str:
-    """Our semantic-preserving normalisation."""
+def denoise_spn(text: str, mark: bool = False) -> str:
+    """Our semantic-preserving normalisation (mark=True keeps hashtag sentinels)."""
     text = repair_mojibake(text)
     text = remove_urls(text)
     text = remove_users(text)
-    text = hashtags_to_words(text)
+    text = hashtags_to_words(text, mark)
     text = emoji_to_text(text)
     text = remove_special_symbols(text)   # only leftovers (e.g. '|', '~') are dropped now
     text = squash_repeats(text)
     return clean_spaces(text)
 
 
-def get_preprocessor(name: str):
+def denoise_spn_emoji(text: str) -> str:
+    """Emojis -> text, hashtags removed (paper's htg-rem)."""
+    text = repair_mojibake(text)
+    text = remove_urls(text)
+    text = remove_users(text)
+    text = remove_hashtags(text)
+    text = emoji_to_text(text)
+    text = remove_special_symbols(text)
+    text = squash_repeats(text)
+    return clean_spaces(text)
+
+
+def get_preprocessor(name: str, mark: bool = False):
     if name == "none":
         return lambda t: t
     if name == "remove":
         return denoise_remove
     if name == "spn":
-        return denoise_spn
+        return (lambda t: denoise_spn(t, mark=True)) if mark else denoise_spn
+    if name == "spn_emoji":
+        return denoise_spn_emoji
     raise ValueError(f"unknown preprocess '{name}'")
 
 

@@ -32,7 +32,7 @@ from src.config import METHODS, PILOT, PRESETS, Config                     # noq
 from src.data import load_cross_eval_set, load_dataset_splits       # noqa: E402
 from src.evaluate import evaluate_all                               # noqa: E402
 from src.models import build_model, build_tokenizer, load_finetuned  # noqa: E402
-from src.preprocess import get_preprocessor                         # noqa: E402
+from src.preprocess import get_preprocessor, strip_marks                         # noqa: E402
 from src.train import predict_logits, train_model                   # noqa: E402
 
 
@@ -80,7 +80,8 @@ def set_seed(seed):
 def teacher_key(cfg):
     """Teachers that saw identical data + loss are shared between student variants."""
     tname = os.path.basename(cfg.teacher_name.rstrip("/"))
-    return (f"{cfg.dataset}_f{cfg.fold}_{cfg.preprocess}_r1{int(cfg.use_r1)}_r2{int(cfg.use_r2)}"
+    hd = f"_hd{cfg.hashtag_dropout}" if cfg.hashtag_dropout > 0 else ""
+    return (f"{cfg.dataset}_f{cfg.fold}_{cfg.preprocess}{hd}_r1{int(cfg.use_r1)}_r2{int(cfg.use_r2)}"
             f"_{cfg.hard_loss}_a{cfg.alpha}_s{cfg.seed}_{tname}")
 
 
@@ -100,8 +101,9 @@ def main():
 
     # ---------------- Stage 1: denoising + Round-1 augmentation ------------
     data = load_dataset_splits(cfg)
-    prep = get_preprocessor(cfg.preprocess)
-    train = {"text": [prep(t) for t in data["train"]["text"]], "label": data["train"]["label"]}
+    prep = get_preprocessor(cfg.preprocess)                     # evaluation view
+    train_prep = get_preprocessor(cfg.preprocess, mark=cfg.hashtag_dropout > 0)
+    train = {"text": [train_prep(t) for t in data["train"]["text"]], "label": data["train"]["label"]}
     val = {"text": [prep(t) for t in data["val"]["text"]], "label": data["val"]["label"]}
     if cfg.use_r1:
         n0 = len(train["text"])
@@ -143,7 +145,7 @@ def main():
     t_logits = None
     if cfg.use_kd:
         # soft labels from the frozen teacher on CLEAN sequences (no Round-2)
-        t_logits = predict_logits(teacher, tok, train["text"], cfg.max_len)
+        t_logits = predict_logits(teacher, tok, [strip_marks(t) for t in train["text"]], cfg.max_len)
         acc = float(((t_logits > 0).astype(int) == np.asarray(train["label"])).mean())
         log(f"[student] teacher train-acc={acc:.4f} (wrong soft labels: {1 - acc:.2%})")
         del teacher

@@ -97,3 +97,14 @@ def test_class_weights_inverse_frequency():
 
 def test_ece_zero_for_perfectly_calibrated():
     assert expected_calibration_error([1, 0], [1.0, 0.0]) == 0.0
+
+
+# ---------------- hashtag dropout ------------------------------------------
+def test_hashtag_dropout_marks_and_drops_only_hashtags():
+    from src.preprocess import drop_marked, strip_marks
+    t = "they keep coming #BuildThatWall #MAGA"
+    marked = denoise_spn(t, mark=True)
+    assert strip_marks(marked) == denoise_spn(t)                    # eval view unchanged
+    rng = random.Random(0)
+    assert drop_marked(marked, 1.0, rng) == "they keep coming"       # p=1 removes all hashtags
+    assert strip_marks(drop_marked(marked, 0.0, rng)) == denoise_spn(t)

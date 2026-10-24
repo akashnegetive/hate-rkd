@@ -11,6 +11,7 @@ Model selection: the epoch with the best validation macro-F1 is kept.
 """
 import copy
 import math
+import random
 import time
 
 import numpy as np
@@ -21,6 +22,7 @@ from transformers import get_linear_schedule_with_warmup
 from .augment import round_two
 from .losses import class_weights, hard_loss, student_loss
 from .metrics import classification_metrics
+from .preprocess import drop_marked
 
 
 def device():
@@ -72,13 +74,18 @@ def train_model(cfg, model, tokenizer, train, val, batch_size, teacher_logits=No
     scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
     special = [i for i in tokenizer.all_special_ids if i != tokenizer.unk_token_id]
     gen = torch.Generator().manual_seed(cfg.seed)
+    text_rng = random.Random(cfg.seed)
 
     best_f1, best_state, history = -1.0, None, []
     for epoch in range(cfg.epochs):
         model.train()
         t0, running = time.time(), []
         for idx in loader:
-            batch = encode(tokenizer, [texts[i] for i in idx], cfg.max_len)
+            # hashtag dropout (ours): marked hashtags are removed w.p. p, re-sampled every batch
+            batch_texts = [texts[i] for i in idx]
+            if cfg.hashtag_dropout > 0:
+                batch_texts = [drop_marked(t, cfg.hashtag_dropout, text_rng) for t in batch_texts]
+            batch = encode(tokenizer, batch_texts, cfg.max_len)
             if cfg.use_r2:                                       # Round-2 augmentation (online)
                 batch["input_ids"] = round_two(batch["input_ids"], batch["attention_mask"],
                                                tokenizer.unk_token_id, special, cfg.pi, gen)
