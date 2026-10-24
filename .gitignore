@@ -7,5 +7,4 @@ data/davidson/
 data/tweeteval_hate/
 .ipynb_checkpoints/
 .pytest_cache/
-runs_pilot/teachers/
-runs_pilot/students/
+runs_pilot/
