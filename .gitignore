@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.smoke_cache/
+runs/
+data/hateval/
+data/davidson/
+.ipynb_checkpoints/
+.pytest_cache/
