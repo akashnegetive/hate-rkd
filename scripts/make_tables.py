@@ -79,22 +79,25 @@ def efficiency_table(rows):
 
 
 def mcnemar(rows, a, b, role="student"):
+    """McNemar test for every seed both runs share (folds of one seed are concatenated)."""
     def collect(g):
-        rs = sorted([r for r in rows if r["group"] == g and r["role"] == role],
-                    key=lambda r: (r["config"]["fold"], r["config"]["seed"]))
-        # first seed only, all folds concatenated (folds partition the dataset)
-        seed = rs[0]["config"]["seed"] if rs else None
-        rs = [r for r in rs if r["config"]["seed"] == seed]
-        y = np.concatenate([r["eval"]["test_labels"] for r in rs])
-        p = np.concatenate([(np.asarray(r["eval"]["test_logits"]) > 0).astype(int) for r in rs])
-        return y, p
-    ya, pa = collect(a)
-    yb, pb = collect(b)
-    assert (ya == yb).all(), "runs were not evaluated on the same samples"
-    ra, rb = pa == ya, pb == yb
-    n01, n10 = int((ra & ~rb).sum()), int((~ra & rb).sum())
-    stat = (abs(n01 - n10) - 1) ** 2 / max(n01 + n10, 1)
-    return n01, n10, stat, float(chi2.sf(stat, 1))
+        out = defaultdict(list)
+        for r in sorted([r for r in rows if r["group"] == g and r["role"] == role],
+                        key=lambda r: r["config"]["fold"]):
+            out[r["config"]["seed"]].append(r)
+        return {seed: (np.concatenate([r["eval"]["test_labels"] for r in rs]),
+                       np.concatenate([(np.asarray(r["eval"]["test_logits"]) > 0).astype(int) for r in rs]))
+                for seed, rs in out.items()}
+    ca, cb = collect(a), collect(b)
+    results = []
+    for seed in sorted(set(ca) & set(cb)):
+        (ya, pa), (yb, pb) = ca[seed], cb[seed]
+        assert (ya == yb).all(), "runs were not evaluated on the same samples"
+        ra, rb = pa == ya, pb == yb
+        n01, n10 = int((ra & ~rb).sum()), int((~ra & rb).sum())
+        stat = (abs(n01 - n10) - 1) ** 2 / max(n01 + n10, 1)
+        results.append((seed, n01, n10, stat, float(chi2.sf(stat, 1))))
+    return results
 
 
 def main():
@@ -120,10 +123,14 @@ def main():
             frames[sec] = res[1]
     parts.append(efficiency_table(rows))
     for a, b in args.compare:
-        n01, n10, stat, p = mcnemar(rows, a, b, args.role)
-        parts.append(f"\n### McNemar: {a} vs {b} ({args.role})\n\n"
-                     f"only {a} correct = {n01}, only {b} correct = {n10}, chi2 = {stat:.3f}, "
-                     f"p = {p:.4f} -> {'significant' if p < 0.05 else 'not significant'} at 0.05")
+        lines = [f"\n### McNemar: {a} vs {b} ({args.role})\n",
+                 f"| seed | only {a} correct | only {b} correct | chi2 | p | verdict (0.05) |",
+                 "|---|---|---|---|---|---|"]
+        for seed, n01, n10, stat, p in mcnemar(rows, a, b, args.role):
+            better = a if n01 > n10 else b
+            verdict = f"{better} significantly better" if p < 0.05 else "no significant difference"
+            lines.append(f"| {seed} | {n01} | {n10} | {stat:.2f} | {p:.4f} | {verdict} |")
+        parts.append("\n".join(lines))
     md = "\n".join(parts)
     print(md)
     with open(os.path.join(args.runs, "tables.md"), "w") as fh:
