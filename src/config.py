@@ -105,7 +105,11 @@ METHODS = {
     # faithful re-implementation of the paper (RKD-T / RKD-S)
     "rkd": dict(preprocess="remove", use_r1=True, use_r2=True, hard_loss="focal",
                 use_kd=True, kd_gate=False, kd_revise=False, kd_cb=False),
-    # our full method
+    # FINAL method (SR-KD): emoji->text + reliability-gated distillation.
+    # Chosen from the pilot ablations: revision and class-balanced KD did not help.
+    "srkd": dict(preprocess="spn_emoji", use_r1=True, use_r2=True, hard_loss="focal",
+                 use_kd=True, kd_gate=True, kd_revise=False, kd_cb=False),
+    # first version: all three KD switches + emoji AND hashtag normalisation
     "ours": dict(preprocess="spn", use_r1=True, use_r2=True, hard_loss="focal",
                  use_kd=True, kd_gate=True, kd_revise=True, kd_cb=True),
     # ours with emoji->text only (hashtags removed as in the paper)

@@ -25,6 +25,7 @@ from src.metrics import sigmoid   # noqa: E402
 # categorical slots 1-3 of the validated palette, fixed order
 COLORS = {"baseline": "#2a78d6", "rkd": "#eb6834", "ours": "#1baf7a"}
 LABELS = {"baseline": "DistilBERT (CE)", "rkd": "RKD-S (paper)", "ours": "SR-KD-S (ours)"}
+OURS = "srkd"   # run-name of our method; set with --ours
 INK, MUTED, GRID = "#1f1f1e", "#6b6a64", "#e4e3de"
 
 
@@ -52,7 +53,8 @@ def main_runs(rows, dataset):
     """First run (lowest seed/fold) of each main method."""
     res = {}
     for m in ("baseline", "rkd", "ours"):
-        rs = sorted([r for r in rows if r["group"] == f"{dataset}_{m}"],
+        name = OURS if m == "ours" else m
+        rs = sorted([r for r in rows if r["group"] == f"{dataset}_{name}"],
                     key=lambda r: (r["config"]["fold"], r["config"]["seed"]))
         if rs:
             res[m] = rs
@@ -82,7 +84,7 @@ def reliability(main, path, n_bins=10):
     ax.set_ylabel("accuracy", color=INK)
     ax.set_xlim(0.5, 1.0)
     ax.set_ylim(0.3, 1.02)
-    ax.legend(frameon=False, fontsize=8, loc="lower right")
+    ax.legend(frameon=False, fontsize=8, loc="upper left")
     ax.set_title("Reliability diagram (student models)", color=INK, fontsize=11, loc="left")
     fig.tight_layout()
     fig.savefig(path, dpi=200)
@@ -117,23 +119,24 @@ def ablation(rows, dataset, path):
     groups = {}
     for r in rows:
         g = r["group"]
-        if g.startswith(f"{dataset}_abl_") or g in (f"{dataset}_ours", f"{dataset}_rkd"):
+        if g.startswith(f"{dataset}_abl_") or g in (f"{dataset}_{OURS}", f"{dataset}_rkd"):
             groups.setdefault(g, []).append(r["eval"]["test"]["macro_f1"] * 100)
     if not groups:
         return False
-    items = sorted(((np.mean(v), g.replace(f"{dataset}_", "")) for g, v in groups.items()))
+    items = sorted(((np.mean(v), g.replace(f"{dataset}_", ""), len(v)) for g, v in groups.items()))
     fig, ax = plt.subplots(figsize=(6.0, 0.42 * len(items) + 1.0))
     style(ax)
     ax.grid(axis="x", color=GRID, linewidth=0.8)
     ax.grid(axis="y", visible=False)
-    colors = [COLORS["ours"] if n == "ours" else COLORS["rkd"] if n == "rkd" else "#9c9b94" for _, n in items]
-    bars = ax.barh([n for _, n in items], [v for v, _ in items], color=colors, height=0.6)
-    for b, (v, _) in zip(bars, items):
+    colors = [COLORS["ours"] if n == OURS else COLORS["rkd"] if n == "rkd" else "#9c9b94" for _, n, _ in items]
+    labels = [f"{n}  ({k} run{'s' if k > 1 else ''})" for _, n, k in items]
+    bars = ax.barh(labels, [v for v, _, _ in items], color=colors, height=0.6)
+    for b, (v, _, _) in zip(bars, items):
         ax.text(v + 0.3, b.get_y() + b.get_height() / 2, f"{v:.1f}", va="center", fontsize=8, color=INK)
-    lo = min(v for v, _ in items)
-    ax.set_xlim(max(0, lo - 10), 100 if lo > 90 else min(100, max(v for v, _ in items) + 5))
+    lo = min(v for v, _, _ in items)
+    ax.set_xlim(max(0, lo - 10), 100 if lo > 90 else min(100, max(v for v, _, _ in items) + 5))
     ax.set_xlabel("macro-F1 (%) on test set", color=INK)
-    ax.set_title("Ablation (student)", color=INK, fontsize=11, loc="left")
+    ax.set_title("Ablation (student; mean over runs)", color=INK, fontsize=11, loc="left")
     fig.tight_layout()
     fig.savefig(path, dpi=200)
     plt.close(fig)
@@ -144,7 +147,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", default="runs")
     ap.add_argument("--dataset", default="se")
+    ap.add_argument("--ours", default="srkd", help="run-name of our method (pilot: ours_gate)")
     args = ap.parse_args()
+    global OURS
+    OURS = args.ours
     rows = load(args.runs, args.dataset)
     if not rows:
         print("no student results for", args.dataset)
