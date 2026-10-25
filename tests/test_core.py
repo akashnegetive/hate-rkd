@@ -108,3 +108,23 @@ def test_hashtag_dropout_marks_and_drops_only_hashtags():
     rng = random.Random(0)
     assert drop_marked(marked, 1.0, rng) == "they keep coming"       # p=1 removes all hashtags
     assert strip_marks(drop_marked(marked, 0.0, rng)) == denoise_spn(t)
+
+
+# ---------------- calibrated gate ------------------------------------------
+def test_fit_temperature_recovers_overconfidence():
+    import numpy as np
+    from src.metrics import fit_temperature
+    rng = np.random.default_rng(0)
+    true_logit = rng.normal(0, 2, 20000)
+    y = (rng.random(20000) < 1 / (1 + np.exp(-true_logit))).astype(int)
+    t = fit_temperature(3.0 * true_logit, y)        # model is 3x over-confident
+    assert abs(t - 3.0) < 0.2
+
+
+def test_calibrated_gate_softens_overconfident_teacher():
+    cfg = Config(kd_gate=True, lam=0.8)
+    s, t, y = torch.zeros(1), torch.tensor([-2.0]), torch.tensor([1])   # teacher wrong
+    _, raw = student_loss(cfg, s, t, y)
+    cfg.gate_temp = 4.0
+    _, cal = student_loss(cfg, s, t, y)
+    assert cal["lam_mean"] > raw["lam_mean"]       # softer teacher -> less extreme gate

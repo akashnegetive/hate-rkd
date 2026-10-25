@@ -55,6 +55,8 @@ class Config:
     kd_cb: bool = False              # class-balanced distillation loss
     revise_beta: float = 0.6         # mixing weight of ground truth in revision
     gate_floor: float = 0.0          # minimum reliability (keeps some KD everywhere)
+    gate_calibrate: bool = False     # OURS: temperature-scale the teacher (on val) before gating
+    gate_temp: float = 1.0           # teacher temperature used by the gate (fitted if gate_calibrate)
 
     # ---- optimisation -----------------------------------------------------
     lr: float = 1e-5
@@ -109,6 +111,9 @@ METHODS = {
     # Chosen from the pilot ablations: revision and class-balanced KD did not help.
     "srkd": dict(preprocess="spn_emoji", use_r1=True, use_r2=True, hard_loss="focal",
                  use_kd=True, kd_gate=True, kd_revise=False, kd_cb=False),
+    # SR-KD with a calibrated gate: the gate reads a temperature-scaled teacher
+    "srkd_cal": dict(preprocess="spn_emoji", use_r1=True, use_r2=True, hard_loss="focal",
+                     use_kd=True, kd_gate=True, gate_calibrate=True, kd_revise=False, kd_cb=False),
     # first version: all three KD switches + emoji AND hashtag normalisation
     "ours": dict(preprocess="spn", use_r1=True, use_r2=True, hard_loss="focal",
                  use_kd=True, kd_gate=True, kd_revise=True, kd_cb=True),

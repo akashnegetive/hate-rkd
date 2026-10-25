@@ -30,6 +30,28 @@ def expected_calibration_error(labels, probs, n_bins=15):
     return float(ece)
 
 
+def fit_temperature(logits, labels):
+    """Temperature scaling (Guo et al., ICML 2017) for a single-logit binary model.
+
+    Finds T > 0 minimising the negative log-likelihood of sigmoid(logit / T) on held-out
+    data. T > 1 softens an over-confident model, T < 1 sharpens an under-confident one; the
+    predicted class never changes. A 1-D problem, so a log-spaced grid search followed by a
+    finer grid around the best value is exact enough and has no failure modes.
+    """
+    z = np.asarray(logits, dtype=np.float64)
+    y = np.asarray(labels, dtype=np.float64)
+
+    def nll(t):
+        s = z / t
+        # numerically stable -[y log sigmoid(s) + (1-y) log(1-sigmoid(s))]
+        return float(np.mean(np.logaddexp(0, -s) * y + np.logaddexp(0, s) * (1 - y)))
+
+    grid = np.exp(np.linspace(np.log(0.05), np.log(20.0), 200))
+    best = grid[int(np.argmin([nll(t) for t in grid]))]
+    fine = np.linspace(best / 1.05, best * 1.05, 101)
+    return float(fine[int(np.argmin([nll(t) for t in fine]))])
+
+
 def classification_metrics(labels, logits):
     labels = np.asarray(labels).astype(int)
     probs = sigmoid(logits)

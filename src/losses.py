@@ -17,6 +17,8 @@ Ours (three switches, each can be turned on separately for ablation)
                     t_i = beta * y_i + (1-beta) * p_tau_i
                 (beta >= 0.5 guarantees the revised label points to the true class)
     kd_gate   : per-sample lambda driven by teacher reliability
+                (gate_temp != 1: reliability is read from the temperature-scaled teacher
+                 sigmoid(v / T*), with T* fitted on the validation set - "calibrated gate")
                     r_i      = p_bar_i  (teacher's prob. of the true class, tau = 1)
                     lambda_i = lambda * max(r_i, floor)
                 so an unsure / wrong teacher hands the sample back to the hard label.
@@ -88,7 +90,7 @@ def student_loss(cfg, student_logits, teacher_logits, labels, cw=None):
         l_dst = l_dst * cw[labels.long()]
 
     if cfg.kd_gate:
-        p = torch.sigmoid(teacher_logits)
+        p = torch.sigmoid(teacher_logits / cfg.gate_temp)
         reliability = labels * p + (1 - labels) * (1 - p)
         lam = cfg.lam * reliability.clamp(min=cfg.gate_floor)
     else:

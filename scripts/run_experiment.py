@@ -31,6 +31,7 @@ from src.augment import round_one                                   # noqa: E402
 from src.config import METHODS, PILOT, PRESETS, Config                     # noqa: E402
 from src.data import load_cross_eval_set, load_dataset_splits       # noqa: E402
 from src.evaluate import evaluate_all                               # noqa: E402
+from src.metrics import expected_calibration_error, fit_temperature, sigmoid  # noqa: E402
 from src.models import build_model, build_tokenizer, load_finetuned  # noqa: E402
 from src.preprocess import get_preprocessor, strip_marks                         # noqa: E402
 from src.train import predict_logits, train_model                   # noqa: E402
@@ -148,6 +149,15 @@ def main():
         t_logits = predict_logits(teacher, tok, [strip_marks(t) for t in train["text"]], cfg.max_len)
         acc = float(((t_logits > 0).astype(int) == np.asarray(train["label"])).mean())
         log(f"[student] teacher train-acc={acc:.4f} (wrong soft labels: {1 - acc:.2%})")
+        if cfg.kd_gate and cfg.gate_calibrate:
+            # calibrated gate: fit the teacher's temperature on held-out validation data
+            v_logits = predict_logits(teacher, tok, val["text"], cfg.max_len)
+            cfg.gate_temp = fit_temperature(v_logits, val["label"])
+            ece_raw = expected_calibration_error(val["label"], sigmoid(v_logits))
+            ece_cal = expected_calibration_error(val["label"], sigmoid(v_logits / cfg.gate_temp))
+            cfg.extra.update(teacher_val_ece_raw=ece_raw, teacher_val_ece_cal=ece_cal)
+            log(f"[student] calibrated gate: T*={cfg.gate_temp:.3f}  teacher val ECE "
+                f"{ece_raw:.4f} -> {ece_cal:.4f}")
         del teacher
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
