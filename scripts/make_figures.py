@@ -26,6 +26,7 @@ from src.metrics import sigmoid   # noqa: E402
 COLORS = {"baseline": "#2a78d6", "rkd": "#eb6834", "ours": "#1baf7a"}
 LABELS = {"baseline": "DistilBERT (CE)", "rkd": "RKD-S (paper)", "ours": "SR-KD-S (ours)"}
 OURS = "srkd"   # run-name of our method; set with --ours
+NAMES = {"baseline": "baseline", "rkd": "rkd"}   # run-names of the reference methods
 INK, MUTED, GRID = "#1f1f1e", "#6b6a64", "#e4e3de"
 
 
@@ -53,7 +54,7 @@ def main_runs(rows, dataset):
     """First run (lowest seed/fold) of each main method."""
     res = {}
     for m in ("baseline", "rkd", "ours"):
-        name = OURS if m == "ours" else m
+        name = OURS if m == "ours" else NAMES[m]
         rs = sorted([r for r in rows if r["group"] == f"{dataset}_{name}"],
                     key=lambda r: (r["config"]["fold"], r["config"]["seed"]))
         if rs:
@@ -119,7 +120,8 @@ def ablation(rows, dataset, path):
     groups = {}
     for r in rows:
         g = r["group"]
-        if g.startswith(f"{dataset}_abl_") or g in (f"{dataset}_{OURS}", f"{dataset}_rkd"):
+        if (g.startswith(f"{dataset}_abl_") or re.match(rf"{dataset}_[LX]\d_", g)
+                or g in (f"{dataset}_{OURS}", f"{dataset}_{NAMES['rkd']}")):
             groups.setdefault(g, []).append(r["eval"]["test"]["macro_f1"] * 100)
     if not groups:
         return False
@@ -128,7 +130,8 @@ def ablation(rows, dataset, path):
     style(ax)
     ax.grid(axis="x", color=GRID, linewidth=0.8)
     ax.grid(axis="y", visible=False)
-    colors = [COLORS["ours"] if n == OURS else COLORS["rkd"] if n == "rkd" else "#9c9b94" for _, n, _ in items]
+    colors = [COLORS["ours"] if n == OURS else COLORS["rkd"] if n == NAMES["rkd"] else "#9c9b94"
+              for _, n, _ in items]
     labels = [f"{n}  ({k} run{'s' if k > 1 else ''})" for _, n, k in items]
     bars = ax.barh(labels, [v for v, _, _ in items], color=colors, height=0.6)
     for b, (v, _, _) in zip(bars, items):
@@ -147,10 +150,17 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", default="runs")
     ap.add_argument("--dataset", default="se")
-    ap.add_argument("--ours", default="srkd", help="run-name of our method (pilot: ours_gate)")
+    ap.add_argument("--ours", default="srkd", help="run-name of our method (pilot: ours_gate, ladder: L3_gate)")
+    ap.add_argument("--baseline", default="baseline", help="ladder: L0_baseline")
+    ap.add_argument("--rkd", default="rkd", help="ladder: L1_rkd")
+    ap.add_argument("--ladder", action="store_true", help="shortcut for the ladder run-names")
     args = ap.parse_args()
     global OURS
     OURS = args.ours
+    NAMES.update(baseline=args.baseline, rkd=args.rkd)
+    if args.ladder:
+        OURS = "L3_gate"
+        NAMES.update(baseline="L0_baseline", rkd="L1_rkd")
     rows = load(args.runs, args.dataset)
     if not rows:
         print("no student results for", args.dataset)

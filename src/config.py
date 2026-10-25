@@ -76,6 +76,7 @@ class Config:
 
     # ---- bookkeeping ------------------------------------------------------
     out_dir: str = "runs"
+    teacher_dir: str = ""            # where teacher checkpoints are cached (default: out_dir/teachers)
     run_name: str = ""
     extra: dict = field(default_factory=dict)
 

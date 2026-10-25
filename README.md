@@ -30,7 +30,33 @@ combination for hate-speech KD, plus the negative results.
 **Read [`docs/THESIS_GUIDE.md`](docs/THESIS_GUIDE.md)** for the research gap, equations, a
 file-by-file code explanation, the 6-day plan and viva questions.
 
-## Quick start (Colab / Kaggle, T4 GPU)
+## Run on GPU: step-by-step ladder (recommended)
+
+Open **[`notebooks/gpu_ladder.ipynb`](notebooks/gpu_ladder.ipynb)** in Colab (T4 GPU) or Kaggle
+(GPU + Internet on) and run the cells from the top. It trains real BERT / DistilBERT and adds one
+change per step:
+
+| Step | Change | Purpose |
+|---|---|---|
+| L0 | BERT / DistilBERT, raw text | paper's baseline rows |
+| L1 | paper's RKD | **before** (+ reproduction check vs. paper Table II) |
+| L2 | + emoji → text | effect of N1 |
+| L3 | + reliability gate = SR-KD | effect of N2, **after** |
+| X1–X7 | L3 (or L1) + one extra change | hashtags, hashtag dropout, revision, class balance, calibrated gate, gate without emoji, smaller λ |
+
+Results are saved to Google Drive (Colab) and finished steps are skipped on re-run, so a
+disconnect costs at most one step. `python scripts/make_ladder.py --runs <OUT>` builds the table:
+mean ± std per step, the change versus the previous step, and the per-seed McNemar test.
+
+Command-line equivalent:
+
+```bash
+DATASET=se SEEDS="42 1 2" OUT=runs bash scripts/run_ladder.sh     # SemEval, 3 seeds
+DATASET=dv FOLDS="0" OUT=runs bash scripts/run_ladder.sh          # Davidson fold 0
+python scripts/make_ladder.py --runs runs                         # runs/ladder.md
+```
+
+## Quick start (other grids)
 
 ```bash
 git clone https://github.com/akashnegetive/hate-rkd.git && cd hate-rkd
@@ -44,8 +70,7 @@ bash scripts/run_all.sh tables            # runs/tables.md (+ McNemar tests)
 python scripts/make_figures.py --runs runs --dataset se
 ```
 
-Or open `notebooks/colab_run.ipynb`. Set `OUT=/content/drive/MyDrive/hate-rkd-runs` to keep
-results on Google Drive between sessions. Trained teachers are cached and reused.
+Trained teachers are cached and reused (`--teacher_dir`), and `--skip_done` skips finished runs.
 
 ### Single experiments
 

@@ -177,7 +177,9 @@ hate-rkd/
 │   ├── make_tables.py     results JSON → Markdown/CSV tables + McNemar test
 │   └── make_figures.py    reliability diagram, setting comparison, ablation chart
 ├── tests/test_core.py     13 unit tests (paper Table I examples, loss properties…)
-└── notebooks/colab_run.ipynb  click-through notebook for Colab/Kaggle
+├── scripts/run_ladder.sh      step-by-step ladder L0 → L3 (+ extras X1–X7), resumable
+├── scripts/make_ladder.py     ladder table: Δ per step + per-seed McNemar
+└── notebooks/gpu_ladder.ipynb click-through GPU notebook for Colab/Kaggle
 ```
 
 ### 5.1 `config.py`

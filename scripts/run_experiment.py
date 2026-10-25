@@ -47,6 +47,8 @@ def parse_args():
     ap.add_argument("--stage", default="both", choices=["teacher", "student", "both"])
     ap.add_argument("--retrain_teacher", action="store_true")
     ap.add_argument("--save_student", action="store_true")
+    ap.add_argument("--skip_done", action="store_true",
+                    help="do nothing if this run's result JSON already exists (resume after a disconnect)")
     # every Config field can be overridden from the command line
     for f in fields(Config):
         if f.name == "extra":
@@ -91,6 +93,11 @@ def main():
     cfg = make_config(args)
     os.makedirs(os.path.join(cfg.out_dir, "results"), exist_ok=True)
     log_path = os.path.join(cfg.out_dir, "results", f"{cfg.run_name}.log")
+    final_role = "teacher" if args.stage == "teacher" else "student"
+    if args.skip_done and os.path.exists(os.path.join(cfg.out_dir, "results",
+                                                      f"{cfg.run_name}__{final_role}.json")):
+        print(f"[skip] {cfg.run_name} already finished", flush=True)
+        return
 
     def log(msg):
         print(msg, flush=True)
@@ -123,12 +130,21 @@ def main():
         log(f"saved {path}")
 
     # ---------------- Stage 2: teacher ------------------------------------
-    t_dir = os.path.join(cfg.out_dir, "teachers", teacher_key(cfg))
+    t_dir = os.path.join(cfg.teacher_dir or os.path.join(cfg.out_dir, "teachers"), teacher_key(cfg))
+    t_eval = os.path.join(t_dir, "teacher_eval.json")
     need_teacher = args.stage in ("teacher", "both") or cfg.use_kd
     if need_teacher:
         if os.path.exists(os.path.join(t_dir, "config.json")) and not args.retrain_teacher:
             log(f"[teacher] reusing {t_dir}")
             teacher, tok = load_finetuned(t_dir)
+            if args.stage in ("teacher", "both"):
+                # every run gets its teacher's scores, even when the teacher was trained earlier
+                if os.path.exists(t_eval):
+                    with open(t_eval) as fh:
+                        cached = json.load(fh)
+                    save_result("teacher", cached["history"], cached["eval"])
+                else:
+                    save_result("teacher", [], evaluate_all(cfg, teacher, tok, data["test"], prep, cross, log))
         else:
             log(f"[teacher] training {cfg.teacher_name} with {cfg.hard_loss} loss")
             tok = build_tokenizer(cfg.teacher_name, data["train"]["text"], f"{cfg.dataset}_f{cfg.fold}")
@@ -137,7 +153,10 @@ def main():
             teacher.save_pretrained(t_dir)
             tok.save_pretrained(t_dir)
             if args.stage in ("teacher", "both"):
-                save_result("teacher", hist, evaluate_all(cfg, teacher, tok, data["test"], prep, cross, log))
+                ev = evaluate_all(cfg, teacher, tok, data["test"], prep, cross, log)
+                with open(t_eval, "w") as fh:
+                    json.dump({"history": hist, "eval": ev}, fh)
+                save_result("teacher", hist, ev)
 
     if args.stage == "teacher":
         return
