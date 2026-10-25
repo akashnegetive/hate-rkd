@@ -13,6 +13,7 @@
 | dv | dv_ours_hd | teacher | 1 | 92.2 | 66.1 | 92.4 | 36.3 | 26.1 | 11.7 |
 | dv | dv_rkd | student | 1 | 92.9 | 69.6 | 93.1 | 43.0 | 24.0 | 11.2 |
 | dv | dv_rkd | teacher | 1 | 91.5 | 66.7 | 92.1 | 38.1 | 21.0 | 10.2 |
+| dv | dv_srkd_cal | student | 1 | 91.8 | 68.3 | 92.4 | 41.1 | 22.0 | 11.2 |
 | se | se_abl_emo_no_cb | student | 1 | 59.9 | 59.8 | 59.5 | 61.8 | 3.5 | 23.7 |
 | se | se_abl_emo_no_gate | student | 1 | 57.2 | 56.6 | 55.8 | 61.8 | 3.5 | 24.1 |
 | se | se_abl_emo_no_revise | student | 1 | 58.8 | 58.5 | 58.0 | 61.8 | 2.8 | 23.8 |
@@ -32,6 +33,7 @@
 | se | se_ours_hd | teacher | 3 | 53.6 ± 2.9 | 52.0 ± 4.0 | 50.7 ± 4.6 | 60.1 ± 0.5 | 15.4 ± 3.4 | 27.6 ± 1.1 |
 | se | se_rkd | student | 3 | 56.6 ± 2.9 | 55.7 ± 3.8 | 54.7 ± 4.3 | 61.7 ± 0.6 | 5.6 ± 2.5 | 24.0 ± 0.6 |
 | se | se_rkd | teacher | 3 | 58.9 ± 0.7 | 58.7 ± 0.7 | 58.3 ± 0.8 | 61.5 ± 0.6 | 14.1 ± 0.4 | 25.7 ± 0.4 |
+| se | se_srkd_cal | student | 3 | 60.4 ± 0.8 | 60.3 ± 0.8 | 60.0 ± 0.7 | 61.9 ± 0.9 | 3.7 ± 1.3 | 23.4 ± 0.2 |
 
 ### Robustness (perturbed test set)
 
@@ -47,6 +49,7 @@
 | dv | dv_ours_hd | teacher | 1 | 87.3 | 59.4 | 89.2 | 25.7 |
 | dv | dv_rkd | student | 1 | 85.2 | 59.5 | 88.0 | 27.3 |
 | dv | dv_rkd | teacher | 1 | 84.4 | 58.9 | 87.5 | 26.6 |
+| dv | dv_srkd_cal | student | 1 | 81.1 | 57.4 | 85.5 | 25.6 |
 | se | se_abl_emo_no_cb | student | 1 | 55.3 | 54.8 | 54.0 | 59.6 |
 | se | se_abl_emo_no_gate | student | 1 | 53.4 | 52.1 | 50.8 | 60.0 |
 | se | se_abl_emo_no_revise | student | 1 | 54.5 | 53.8 | 52.8 | 59.7 |
@@ -66,6 +69,7 @@
 | se | se_ours_hd | teacher | 3 | 52.0 ± 2.0 | 50.4 ± 2.8 | 49.0 ± 3.3 | 59.0 ± 0.3 |
 | se | se_rkd | student | 3 | 54.5 ± 2.6 | 53.1 ± 3.5 | 51.9 ± 3.9 | 60.8 ± 0.6 |
 | se | se_rkd | teacher | 3 | 57.3 ± 1.3 | 56.9 ± 1.4 | 56.3 ± 1.5 | 60.7 ± 0.9 |
+| se | se_srkd_cal | student | 3 | 56.8 ± 0.8 | 56.4 ± 0.7 | 55.7 ± 0.7 | 60.7 ± 1.0 |
 
 ### Slice: tweets WITH emojis/hashtags
 
@@ -81,6 +85,7 @@
 | dv | dv_ours_hd | teacher | 1 | 94.3 | 61.8 | 94.2 | 26.7 |
 | dv | dv_rkd | student | 1 | 94.7 | 62.7 | 94.5 | 28.2 |
 | dv | dv_rkd | teacher | 1 | 92.3 | 59.4 | 93.0 | 22.8 |
+| dv | dv_srkd_cal | student | 1 | 94.6 | 67.6 | 94.8 | 38.0 |
 | se | se_abl_emo_no_cb | student | 1 | 63.5 | 63.4 | 63.8 | 61.1 |
 | se | se_abl_emo_no_gate | student | 1 | 61.6 | 61.6 | 61.5 | 61.9 |
 | se | se_abl_emo_no_revise | student | 1 | 62.8 | 62.8 | 63.0 | 61.2 |
@@ -100,6 +105,7 @@
 | se | se_ours_hd | teacher | 3 | 49.9 ± 2.1 | 47.2 ± 3.2 | 45.4 ± 3.8 | 58.7 ± 0.6 |
 | se | se_rkd | student | 3 | 59.6 ± 1.9 | 59.4 ± 2.1 | 59.0 ± 2.5 | 61.5 ± 0.5 |
 | se | se_rkd | teacher | 3 | 60.2 ± 0.6 | 60.2 ± 0.5 | 60.0 ± 0.5 | 61.4 ± 0.6 |
+| se | se_srkd_cal | student | 3 | 62.1 ± 1.0 | 62.0 ± 0.9 | 62.2 ± 1.1 | 60.9 ± 1.1 |
 
 ### Slice: tweets WITHOUT emojis/hashtags
 
@@ -115,6 +121,7 @@
 | dv | dv_ours_hd | teacher | 1 | 91.6 | 66.7 | 91.9 | 38.0 |
 | dv | dv_rkd | student | 1 | 92.4 | 70.6 | 92.7 | 45.4 |
 | dv | dv_rkd | teacher | 1 | 91.2 | 68.2 | 91.8 | 41.1 |
+| dv | dv_srkd_cal | student | 1 | 90.9 | 68.4 | 91.7 | 41.6 |
 | se | se_abl_emo_no_cb | student | 1 | 54.2 | 51.8 | 50.1 | 62.6 |
 | se | se_abl_emo_no_gate | student | 1 | 50.3 | 45.5 | 43.1 | 61.7 |
 | se | se_abl_emo_no_revise | student | 1 | 52.4 | 48.7 | 46.6 | 62.5 |
@@ -134,6 +141,7 @@
 | se | se_ours_hd | teacher | 3 | 59.5 ± 4.2 | 58.6 ± 4.9 | 58.0 ± 5.6 | 62.7 ± 0.4 |
 | se | se_rkd | student | 3 | 52.0 ± 5.1 | 47.8 ± 7.9 | 45.7 ± 8.8 | 61.9 ± 1.7 |
 | se | se_rkd | teacher | 3 | 56.7 ± 1.3 | 56.0 ± 1.4 | 55.2 ± 1.5 | 61.6 ± 1.0 |
+| se | se_srkd_cal | student | 3 | 57.6 ± 3.1 | 56.4 ± 4.0 | 55.4 ± 4.5 | 63.3 ± 0.8 |
 
 ### Cross-dataset generalisation
 
@@ -149,6 +157,7 @@
 | dv | dv_ours_hd | teacher | 1 | 57.8 | 46.5 | 50.4 | 21.9 | 11.0 |
 | dv | dv_rkd | student | 1 | 57.5 | 38.9 | 44.2 | 5.3 | 10.2 |
 | dv | dv_rkd | teacher | 1 | 56.9 | 39.8 | 44.8 | 7.7 | 14.8 |
+| dv | dv_srkd_cal | student | 1 | 57.7 | 41.8 | 46.6 | 11.4 | 11.6 |
 | se | se_abl_emo_no_cb | student | 1 | 49.9 | 36.5 | 62.3 | 7.4 | 8.0 |
 | se | se_abl_emo_no_gate | student | 1 | 44.1 | 33.8 | 56.9 | 7.8 | 12.6 |
 | se | se_abl_emo_no_revise | student | 1 | 48.3 | 35.7 | 60.9 | 7.3 | 9.2 |
@@ -168,6 +177,7 @@
 | se | se_ours_hd | teacher | 3 | 54.0 ± 6.1 | 38.1 ± 2.7 | 65.7 ± 4.9 | 6.8 ± 0.4 | 15.6 ± 5.8 |
 | se | se_rkd | student | 3 | 43.2 ± 4.6 | 33.1 ± 2.3 | 55.9 ± 4.7 | 7.3 ± 0.4 | 17.4 ± 5.8 |
 | se | se_rkd | teacher | 3 | 45.2 ± 1.6 | 34.2 ± 0.8 | 57.9 ± 1.6 | 7.4 ± 0.2 | 27.2 ± 2.1 |
+| se | se_srkd_cal | student | 3 | 50.9 ± 0.1 | 37.0 ± 0.1 | 63.2 ± 0.2 | 7.5 ± 0.4 | 13.6 ± 3.7 |
 
 ### Efficiency
 
@@ -183,6 +193,7 @@
 | dv | dv_ours_hd | teacher | 5.31 | 20.3 | 4.11 | cpu |
 | dv | dv_rkd | student | 1.45 | 5.6 | 1.67 | cpu |
 | dv | dv_rkd | teacher | 5.31 | 20.3 | 4.22 | cpu |
+| dv | dv_srkd_cal | student | 1.45 | 5.6 | 1.45 | cpu |
 | se | se_abl_emo_no_cb | student | 1.45 | 5.6 | 1.96 | cpu |
 | se | se_abl_emo_no_gate | student | 1.45 | 5.6 | 1.84 | cpu |
 | se | se_abl_emo_no_revise | student | 1.45 | 5.6 | 1.94 | cpu |
@@ -202,6 +213,7 @@
 | se | se_ours | teacher | 5.31 | 20.3 | 4.72 | cpu |
 | se | se_rkd | student | 1.45 | 5.6 | 1.86 | cpu |
 | se | se_rkd | teacher | 5.31 | 20.3 | 3.89 | cpu |
+| se | se_srkd_cal | student | 1.45 | 5.6 | 1.86 | cpu |
 
 ### McNemar: se_rkd vs se_ours_gate (student)
 
@@ -211,6 +223,14 @@
 | 2 | 298 | 557 | 77.85 | 0.0000 | se_ours_gate significantly better |
 | 42 | 176 | 237 | 8.72 | 0.0032 | se_ours_gate significantly better |
 
+### McNemar: se_ours_gate vs se_srkd_cal (student)
+
+| seed | only se_ours_gate correct | only se_srkd_cal correct | chi2 | p | verdict (0.05) |
+|---|---|---|---|---|---|
+| 1 | 134 | 113 | 1.62 | 0.2032 | no significant difference |
+| 2 | 94 | 71 | 2.93 | 0.0868 | no significant difference |
+| 42 | 29 | 27 | 0.02 | 0.8937 | no significant difference |
+
 ### McNemar: se_rkd vs se_ours_emoji (student)
 
 | seed | only se_rkd correct | only se_ours_emoji correct | chi2 | p | verdict (0.05) |
@@ -218,14 +238,6 @@
 | 1 | 320 | 226 | 15.84 | 0.0001 | se_rkd significantly better |
 | 2 | 221 | 421 | 61.68 | 0.0000 | se_ours_emoji significantly better |
 | 42 | 171 | 184 | 0.41 | 0.5242 | no significant difference |
-
-### McNemar: se_rkd vs se_ours_hd (student)
-
-| seed | only se_rkd correct | only se_ours_hd correct | chi2 | p | verdict (0.05) |
-|---|---|---|---|---|---|
-| 1 | 683 | 245 | 205.79 | 0.0000 | se_rkd significantly better |
-| 2 | 445 | 441 | 0.01 | 0.9197 | no significant difference |
-| 42 | 509 | 264 | 77.02 | 0.0000 | se_rkd significantly better |
 
 ### McNemar: se_baseline vs se_ours_gate (student)
 

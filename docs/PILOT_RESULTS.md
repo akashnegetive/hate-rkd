@@ -102,6 +102,32 @@ test). Our counts confirm and extend it, and connect it to why RKD's hashtag del
 
 ---
 
+## 3b. Calibrated gate (tested, not adopted)
+
+Idea: temperature-scale the teacher on the validation set (Guo et al. 2017) before the gate
+reads its confidence, following Hard-Gate KD's argument that gating needs a calibrated teacher
+(`--method srkd_cal`).
+
+| Student | SE macro-F1 (3 seeds) | SE ECE | SE perturbed | SE → DV | DV macro-F1 / hate-F1 |
+|---|---|---|---|---|---|
+| **Gate (SR-KD, final)** | **60.8** | 3.9 | **56.9** | **37.6** | **69.5 / 43.1** |
+| Calibrated gate | 60.3 | 3.7 | 56.4 | 37.0 | 68.3 / 41.1 |
+
+Fitted teacher temperatures: SE T* = 1.78, 1.18, 1.23 (over-confident teachers); DV T* = 0.31
+(under-confident, typical of focal loss on heavy imbalance). The teacher's validation ECE fell
+from 11.2→5.1 %, 6.3→5.1 %, 5.8→3.8 % (SE) and 19.7→3.1 % (DV).
+
+**Result:** McNemar finds **no significant difference** from the plain gate on any seed
+(p = 0.89, 0.20, 0.09). Against RKD, the calibrated gate is significantly better on 2 of 3 seeds
+(the plain gate on 3 of 3). **Calibration makes the teacher more honest but does not improve the
+student**, so SR-KD keeps the plain gate. Likely reason (not tested directly): Hard-Gate KD uses
+an on/off threshold, where calibration decides which samples switch. Our gate is soft
+(λ_i = λ·p_true), and temperature mostly shifts all λ_i together, similar to a small global
+change of λ, to which the student was insensitive. On the SE training set, calibration lowered
+the mean λ_i from 0.67 to 0.58.
+
+---
+
 ## 4. Davidson (fold 0 of 5, 1 run each)
 
 | Student | Acc | W-F1 | Macro-F1 | Hate-F1 | Hate P | Hate R | Cross → SE |
@@ -139,7 +165,7 @@ size and speed to RKD-S. The gain costs nothing at inference time.
   significant on all 3 seeds, with better robustness, calibration and cross-dataset transfer.
 * **Tied:** Davidson in-domain (with better cross-dataset transfer).
 * **Did not work, reported as negative results:** soft-label revision, class-balanced
-  distillation, keeping hashtags, hashtag dropout. The likely reasons: the teacher is wrong on
+  distillation, keeping hashtags, hashtag dropout, and the calibrated gate (§3b). The likely reasons: the teacher is wrong on
   only 2–3 % of training tweets, so revision mostly "corrects" towards noisy labels; CB stacks on
   focal α and over-predicts hate; hashtags are a train/test shortcut on SemEval.
 * **Caveats:** from-scratch models; 3 seeds on SE but only 1 fold on DV. Confirm on GPU with

@@ -22,6 +22,7 @@ numbers from them in the thesis.
 | 2a | Hashtag → segmented words | **Yes**: NULI, ekphrasis, many SemEval systems | Supported generally, but on HatEval hashtags are a known label shift (MITRE 2019) | Hurts on SemEval (−7 M-F1) | **Drop**; report as confirmation of MITRE |
 | 2b | Hashtag dropout | Related: token/feature dropout, shortcut-mitigation work; not found for hashtags specifically | Untested idea | Does not fix the shift | **Drop** (negative result) |
 | 3 | Per-sample confidence gating of KD | **Yes**: CCKD (2021), Hard-Gate KD (EMNLP 2022), CA-MKD (2022), Weighted Soft Labels (ICLR 2021) | Strongly supported (vision/NLG) | +2.5 on top of N1 | **Keep (N2)**, cited as an adaptation of CCKD |
+| 3b | Calibrated teacher for the gate (temperature scaling) | **Partly**: Hard-Gate KD (EMNLP 2022) gates with a calibrated teacher; CKD (Findings ACL 2023) calibrates soft labels for stance detection; not found for soft gates in hate-speech KD | Plausible | No significant difference from plain gate | **Drop** (negative result, §3b of PILOT_RESULTS) |
 | 4 | Revising wrong teacher labels | **Yes**: Knowledge/Logits Adjustment (Wen et al. 2021), Label Revision (Lan et al. 2024) | Supported in vision | Hurts (−1.1) | **Drop**; explain via label noise |
 | 5 | Class-balanced distillation loss | **Yes**: Balanced KD (Zhang et al. 2021), class-balanced reweighting in long-tail KD | Supported in long-tailed vision | Raises hate recall, lowers F1 | **Drop**; explain by interaction with focal α |
 | 6 | Focal loss (kept from the paper) | **Yes**: WOAH 2024 imbalance study; DCL (Lu et al. 2023) | Supported | (paper's choice, unchanged) | Keep |
@@ -153,6 +154,22 @@ reliability weighting to binary, sigmoid-based hate-speech KD with a focal hard-
 In our searches, no hate-speech KD work used it (RKD, Deng et al. 2023, DDML 2025 and BAT-KD use
 fixed λ, multiple teachers or students, or adaptive temperature). Also add a related-work
 paragraph contrasting it with BAT-KD's per-sample *temperature*.
+
+### 3b. Calibrating the teacher before gating (tested, dropped)
+
+* **Hard Gate KD** (EMNLP 2022) argues that a teacher's score can judge the student only if the
+  teacher is calibrated (e.g. by temperature scaling), and uses it for an instance-level on/off gate.
+* **"Distilling Calibrated Knowledge for Stance Detection"** (Findings of ACL 2023,
+  https://aclanthology.org/2023.findings-acl.393.pdf) calibrates teacher predictions with
+  dynamic temperature scaling, applied to the soft labels rather than to a gate. *(abstract only)*
+* Temperature scaling itself: Guo et al., "On Calibration of Modern Neural Networks", ICML 2017.
+
+**Our evidence.** Calibration reduced teacher validation ECE (DV 19.7 → 3.1 %), but the student
+did not improve: no significant difference from the plain gate on any SemEval seed, and
+−1.2 macro-F1 on Davidson.
+
+**Verdict.** Motivated by the literature but **not supported for a soft gate** in this
+pipeline. Reported as a negative result.
 
 ---
 
