@@ -14,8 +14,10 @@ In this guide the paper's method is called **RKD** (RKD-T = teacher, RKD-S = stu
 > gate**. Result on SemEval: **60.8 vs. 55.7 macro-F1** over the paper (3 seeds, significant on
 > each). Label revision, class-balanced KD, keeping hashtags and hashtag dropout did **not**
 > help; they stay in the code as switches and are reported as negative ablations, with reasons.
-> New finding: SemEval's test split reverses hashtag meaning (#buildthatwall: 100 % hate in
-> train, 24 % in test), which explains why deleting hashtags works.
+> We also confirm the HatEval train/test hashtag shift first reported by MITRE (SemEval 2019):
+> #buildthatwall is 100 % hate in train and 24 % in test, which explains why deleting hashtags
+> works. **Every choice is checked against prior work in
+> [`LITERATURE_VALIDATION.md`](LITERATURE_VALIDATION.md).**
 > Sections 1 and 4 describe the final method; the remaining sections still describe all the
 > switches, because the ablations use them.
 
@@ -320,13 +322,17 @@ hardware. This is the fair comparison, and examiners accept it.
 
 ## 9. Likely viva questions
 
-**Q: What is novel if gating and label revision exist in vision KD?**
-A: The contribution is (i) finding *why* the hate-speech KD pipeline fails (deleted hashtag and
-emoji semantics, blind trust in the teacher, imbalance only in L_std), with evidence from the
-base paper's own error cases; (ii) a combined, parameter-free fix for binary sigmoid KD in this
-domain; and (iii) the first calibration and cross-dataset evaluation of hate-speech KD students.
-Combining existing tools for a new, well-motivated problem is a recognised contribution, and
-the ablations show what each part adds.
+**Q: Each part already exists in prior work. What is novel?**
+A: Correct: emoji-to-text is OffensEval practice (NULI 2019), and per-sample confidence-weighted
+distillation exists (CCKD 2021, Hard-Gate KD 2022, CA-MKD). Our contribution is (i) checking
+each of RKD's design choices against that literature and against controlled ablations; (ii)
+adapting confidence-conditioned distillation to binary, sigmoid-based hate-speech KD with a
+focal hard-label loss and combining it with emoji normalisation, a combination we did not find
+in prior hate-speech KD work, which gives +5.1 macro-F1 (significant on 3 seeds) at zero
+inference cost; (iii) negative results for three choices that prior work supports elsewhere
+(hashtag segmentation, label revision, class-balanced KD), each with an explanation; and (iv)
+calibration and cross-dataset evaluation of hate-speech KD students. See
+`docs/LITERATURE_VALIDATION.md`.
 
 **Q: Why not simply lower λ?**
 A: A lower λ reduces the teacher's influence on *all* samples, including the many where it is
@@ -353,8 +359,9 @@ compare *relative* drops between methods.
 **Q: Your motivation said hashtags carry hate, yet the final method deletes them. Why?**
 A: We tested keeping them and it hurt (−7 macro-F1). Analysing the data showed why: SemEval's
 test split reverses hashtag meaning (#buildthatwall is 100 % hate in train and 24 % in test).
-Keeping hashtags teaches a shortcut. This finding explains *why* the paper's deletion step
-works, which the paper itself does not explain. Emojis have no such reversal, and translating
+Keeping hashtags teaches a shortcut. MITRE (SemEval 2019) already reported this shift
+(#BuildTheWall: 98 % hate in train, 35 % in test); our counts confirm and extend it, and it
+explains *why* RKD's deletion step works, which the base paper attributes only to "noise". Emojis have no such reversal, and translating
 them helped on every seed.
 
 **Q: Why did label revision and class-balanced KD not help?**

@@ -80,7 +80,7 @@ below mixes 3-run means and single runs; each bar is labelled with its number of
 
 ---
 
-## 3. Key finding: hashtags are a *shortcut* in SemEval (why the paper's deletion works)
+## 3. Hashtags are a *shortcut* in SemEval (confirms MITRE 2019; explains why the paper's deletion works)
 
 The SemEval test split **reverses** the hashtag→label correlation of the training split:
 
@@ -95,8 +95,10 @@ The SemEval test split **reverses** the hashtag→label correlation of the train
 A model that keeps hashtags learns "#buildthatwall ⇒ hate", which is right in training and wrong
 on three-quarters of the test tweets. Deleting hashtags (the paper's `htg-rem`) protects
 against this, even though the paper motivates it only as "noise removal". Emojis did not show
-this problem: translating them to words improved the teacher on every seed. This analysis is a contribution in its
-own right: it explains *why* one of the paper's denoising steps works.
+this problem: translating them to words improved the teacher on every seed. This shift was
+**first reported by MITRE at SemEval-2019 Task 5** (#BuildTheWall: 98 % hate in train, 35 % in
+test). Our counts confirm and extend it, and connect it to why RKD's hashtag deletion works. See
+`LITERATURE_VALIDATION.md` §2.
 
 ---
 

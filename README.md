@@ -21,6 +21,12 @@ with pretrained BERT).
 With all switches off, the code is exactly the paper's method, so every comparison is
 like for like.
 
+Each choice is checked against prior work in
+**[`docs/LITERATURE_VALIDATION.md`](docs/LITERATURE_VALIDATION.md)**. Emoji-to-text follows
+OffensEval practice (NULI 2019), the gate adapts confidence-conditioned KD (CCKD 2021, Hard-Gate
+KD 2022), and the hashtag shift confirms MITRE (SemEval 2019). The contribution is the validated
+combination for hate-speech KD, plus the negative results.
+
 **Read [`docs/THESIS_GUIDE.md`](docs/THESIS_GUIDE.md)** for the research gap, equations, a
 file-by-file code explanation, the 6-day plan and viva questions.
 
