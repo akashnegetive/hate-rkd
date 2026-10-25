@@ -8,20 +8,33 @@ In this guide the paper's method is called **RKD** (RKD-T = teacher, RKD-S = stu
 
 ---
 
+> **Update after the pilot experiments (read [`PILOT_RESULTS.md`](PILOT_RESULTS.md)).**
+> We ran every idea below on the real SemEval and Davidson data. The **final method, `srkd`**,
+> keeps only what worked: **emoji → text** (hashtags are still deleted) and the **reliability
+> gate**. Result on SemEval: **60.8 vs. 55.7 macro-F1** over the paper (3 seeds, significant on
+> each). Label revision, class-balanced KD, keeping hashtags and hashtag dropout did **not**
+> help; they stay in the code as switches and are reported as negative ablations, with reasons.
+> New finding: SemEval's test split reverses hashtag meaning (#buildthatwall: 100 % hate in
+> train, 24 % in test), which explains why deleting hashtags works.
+> Sections 1 and 4 describe the final method; the remaining sections still describe all the
+> switches, because the ablations use them.
+
+---
+
 ## 1. One-paragraph summary (say this first in the viva)
 
 RKD compresses a BERT hate-speech detector into DistilBERT using knowledge distillation, with
-three supports: text denoising, two rounds of data augmentation, and focal loss. We found three
-weaknesses. (1) The denoiser **deletes emojis and hashtags**, yet the paper's own error analysis
-shows hateful intent hidden in hashtags such as `#BanIslam`. (2) The student **trusts the
-teacher equally on every sample**, including samples the teacher gets wrong. (3) Class imbalance
-is handled **only in the hard-label loss**, not in the distillation loss. We propose **SR-KD**,
-which (a) turns emojis and hashtags into words instead of deleting them, (b) sets the
-distillation weight per sample from how reliable the teacher is on that sample, and corrects
-wrong soft labels, and (c) makes the distillation loss class-balanced. We also add two
-evaluations the paper lacks: **calibration (ECE)** and **cross-dataset generalisation**. Each
-change is a few lines of code, adds no parameters, and leaves inference cost unchanged, so the
-student stays exactly as small and fast as RKD-S.
+three supports: text denoising, two rounds of data augmentation, and focal loss. We studied
+three suspected weaknesses: the denoiser deletes emojis and hashtags; the student trusts the
+teacher equally on every sample; and class imbalance is handled only in the hard-label loss.
+Testing fixes for all three on the real datasets gave a clear answer. **Translating emojis into
+words** (instead of deleting them) and **gating the distillation weight per sample by the
+teacher's reliability** together raise the student from 55.7 to **60.8 macro-F1** on SemEval
+(3 seeds, significant on each), with better robustness, calibration and cross-dataset transfer,
+at **zero extra inference cost**. Keeping hashtags *hurts*, and we show why: the SemEval test
+split reverses the hashtag-label correlation of the training split, so hashtags are a shortcut.
+Label revision and class-balanced distillation did not help, and we explain why. We also add
+two evaluations the paper lacks: **calibration (ECE)** and **cross-dataset generalisation**.
 
 ---
 
@@ -161,7 +174,7 @@ hate-rkd/
 │   ├── run_all.sh         the full experiment grid, in resumable sections
 │   ├── make_tables.py     results JSON → Markdown/CSV tables + McNemar test
 │   └── make_figures.py    reliability diagram, setting comparison, ablation chart
-├── tests/test_core.py     12 unit tests (paper Table I examples, loss properties…)
+├── tests/test_core.py     13 unit tests (paper Table I examples, loss properties…)
 └── notebooks/colab_run.ipynb  click-through notebook for Colab/Kaggle
 ```
 
@@ -172,7 +185,10 @@ One dataclass, `Config`, holds every knob. `PRESETS` copies the paper's per-data
 * `baseline`: raw text, no augmentation, CE loss, no KD. These are the paper's "BERT" and
   "DistilBERT" rows.
 * `rkd`: paper denoising, R1 + R2, focal loss, plain KD. This is the faithful re-implementation.
-* `ours`: SPN, R1 + R2, focal loss, KD with gate + revise + class-balance.
+* `srkd`: **final method**. Emoji→text (hashtags deleted), R1 + R2, focal loss, KD with the
+  reliability gate.
+* `ours`, `ours_emoji`, `ours_hd`: earlier variants kept for the ablations (full SPN with all
+  three KD switches; emoji-only with all three switches; with hashtag dropout).
 
 Every field can be overridden from the command line (`--kd_gate false`, `--lam 1.0`, …).
 That is how the ablations are run.
@@ -333,6 +349,20 @@ confident but right only 70% of the time sends the wrong posts to review.
 A: The datasets define hate differently. SE targets immigrants and women, while DV separates
 "hate" from "offensive", so DV's offensive tweets are labelled non-hate. A drop is expected. We
 compare *relative* drops between methods.
+
+**Q: Your motivation said hashtags carry hate, yet the final method deletes them. Why?**
+A: We tested keeping them and it hurt (−7 macro-F1). Analysing the data showed why: SemEval's
+test split reverses hashtag meaning (#buildthatwall is 100 % hate in train and 24 % in test).
+Keeping hashtags teaches a shortcut. This finding explains *why* the paper's deletion step
+works, which the paper itself does not explain. Emojis have no such reversal, and translating
+them helped on every seed.
+
+**Q: Why did label revision and class-balanced KD not help?**
+A: The teacher is wrong on only 2–3 % of training tweets, and many of those are probably label
+noise, so revision mostly pushes the student towards noisy labels. Class-balancing multiplies
+the hate weight about 9× on Davidson on top of focal α, so the student over-predicts hate:
+recall +16 points, but precision drops more. The gate already lowers the teacher's influence on
+the unreliable samples, which is the useful part of both ideas.
 
 **Q: Statistical significance?**
 A: Report mean ± std over 3 seeds or 5 folds, plus McNemar's test on the paired test predictions

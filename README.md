@@ -2,16 +2,23 @@
 
 M.Tech thesis project. It extends **Gui, Deng & Zhao, "Improving Hate Speech Detection via Robust
 Knowledge Distillation", IEEE TCSS 13(4), 2026** (called *RKD* here). It contains a faithful
-re-implementation of RKD and three easy-to-medium, parameter-free improvements:
+re-implementation of RKD and easy-to-medium, parameter-free improvements, each tested on real data:
 
-| | Problem in RKD | Our fix | Where |
+| | Problem in RKD | Our change | Pilot result (real data) |
 |---|---|---|---|
-| **N1** | Denoising *deletes* emojis and hashtags, which removes hate cues (`#BanIslam`) | **Semantic-preserving normalisation**: `😡` → "enraged face", `#BanIslam` → "ban islam" | `src/preprocess.py` |
-| **N2** | The student trusts the teacher equally on every sample, even wrong ones | **Reliability-gated λ** per sample + **revision** of wrong soft labels | `src/losses.py` |
-| **N3** | Class imbalance handled only in the hard-label loss | **Class-balanced distillation loss** | `src/losses.py` |
-| **E** | Only accuracy and F1 reported | + **ECE / Brier calibration**, **cross-dataset**, **emoji/hashtag slice**, **McNemar** | `src/evaluate.py` |
+| **N1** | Denoising *deletes* emojis | **Emoji → text**: `😡` → "enraged face" | better teacher on every seed ✅ |
+| **N2** | Student trusts the teacher equally on every sample | **Reliability-gated λ** per sample | +2.5 on top of N1 ✅ |
+| (tested) | Hashtags deleted | keep `#BanIslam` → "ban islam" (± hashtag dropout) | hurts: SemEval test reverses hashtag meaning ❌ |
+| (tested) | Wrong soft labels; imbalance only in hard loss | label revision; class-balanced KD | no gain ❌ (negative ablations) |
+| **E** | Only accuracy/F1 reported | + **ECE calibration**, **cross-dataset**, **slices**, **McNemar** | — |
 
-With all three switches off, the code is exactly the paper's method, so every comparison is
+**Final method `srkd` = N1 + N2.** SemEval student macro-F1: **60.8 ± 1.1 vs. 55.7 ± 3.8** for
+the paper's method (3 seeds, McNemar significant on each), with better robustness, calibration
+and cross-dataset transfer, at the same inference cost. See
+**[`docs/PILOT_RESULTS.md`](docs/PILOT_RESULTS.md)** (from-scratch CPU pilot; confirm on GPU
+with pretrained BERT).
+
+With all switches off, the code is exactly the paper's method, so every comparison is
 like for like.
 
 **Read [`docs/THESIS_GUIDE.md`](docs/THESIS_GUIDE.md)** for the research gap, equations, a
@@ -22,9 +29,9 @@ file-by-file code explanation, the 6-day plan and viva questions.
 ```bash
 git clone https://github.com/akashnegetive/hate-rkd.git && cd hate-rkd
 pip install -r requirements.txt
-python -m pytest -q tests                 # 12 unit tests
+python -m pytest -q tests                 # 13 unit tests
 bash scripts/run_all.sh smoke             # whole pipeline on synthetic data, ~2 min
-bash scripts/run_all.sh se_main           # SemEval: baseline / RKD / ours × 3 seeds
+bash scripts/run_all.sh se_main           # SemEval: baseline / RKD / SR-KD × 3 seeds
 bash scripts/run_all.sh se_ablation
 FOLDS="0 1 2 3 4" bash scripts/run_all.sh dv_main   # Davidson, 5-fold CV
 bash scripts/run_all.sh tables            # runs/tables.md (+ McNemar tests)
@@ -38,16 +45,17 @@ results on Google Drive between sessions. Trained teachers are cached and reused
 
 ```bash
 python scripts/run_experiment.py --dataset se --method rkd            # paper (RKD-T + RKD-S)
-python scripts/run_experiment.py --dataset se --method ours           # SR-KD
-python scripts/run_experiment.py --dataset se --method ours --kd_gate false --run_name se_no_gate
-python scripts/run_experiment.py --dataset dv --method ours --fold 3
+python scripts/run_experiment.py --dataset se --method srkd           # SR-KD (final)
+python scripts/run_experiment.py --dataset se --method srkd --kd_gate false --run_name se_no_gate
+python scripts/run_experiment.py --dataset se --method srkd --pilot true   # CPU, no pretrained weights
+python scripts/run_experiment.py --dataset dv --method srkd --fold 3
 ```
 
 Any field of `src/config.py:Config` can be set from the command line (`--epochs 3 --lam 0.5 ...`).
 
 ### Data
-Downloaded automatically from HuggingFace (`cardiffnlp/tweet_eval` config `hate` for SemEval-2019,
-`tdavidson/hate_speech_offensive` for Davidson). To use the original raw HatEval files instead,
+Downloaded automatically from the authors' GitHub repositories (TweetEval `hate` split for
+SemEval-2019, `t-davidson/hate-speech-and-offensive-language` for Davidson). To use the original raw HatEval files instead,
 put `train.csv`, `dev.csv` and `test.csv` (columns `text`, `HS`) in `data/hateval/`.
 
 ## Output
