@@ -58,6 +58,14 @@ class Config:
     gate_calibrate: bool = False     # OURS: temperature-scale the teacher (on val) before gating
     gate_temp: float = 1.0           # teacher temperature used by the gate (fitted if gate_calibrate)
 
+    # ---- context-privileged distillation (src/context_kd.py) --------------
+    teacher_context: bool = True     # teacher reads "parent [SEP] reply" (False: reply only)
+    student_context: bool = False    # student reads the parent too (upper bound, needs the thread)
+    context_dropout: float = 0.3     # teacher training: hide the parent w.p. p (so it can judge both ways)
+    ctx_head: bool = True            # student predicts "needs context" from the teacher's with/without gap
+    ctx_weight: float = 0.5          # weight of the needs-context loss
+    ctx_max_len: int = 256           # max tokens of "parent [SEP] reply"
+
     # ---- optimisation -----------------------------------------------------
     lr: float = 1e-5
     teacher_bs: int = 32
@@ -87,6 +95,14 @@ class Config:
 PRESETS = {
     "se": dict(alpha=0.2, gamma=2.0, tau=0.3, lam=0.8),
     "dv": dict(alpha=0.6, gamma=2.0, tau=0.3, lam=0.8),
+    # conversation datasets (context-privileged KD); not tuned, see docs/CONTEXT_KD.md
+    "rc": dict(alpha=0.5, gamma=2.0, tau=0.3, lam=0.8, lr=2e-5, teacher_bs=16, student_bs=32,
+               max_len=128, ctx_max_len=256),
+    "ccc": dict(alpha=0.75, gamma=2.0, tau=0.3, lam=0.8, lr=2e-5, teacher_bs=16, student_bs=32,
+                max_len=128, ctx_max_len=256),
+    "smoke_ctx": dict(alpha=0.5, gamma=2.0, tau=0.3, lam=0.8, epochs=8, max_len=32, ctx_max_len=64,
+                      teacher_bs=16, student_bs=16, lr=3e-3, fp16=False,
+                      teacher_name="smoke-teacher", student_name="smoke-student"),
     # tiny, offline configuration used only to test the code end-to-end
     "smoke": dict(alpha=0.5, gamma=2.0, tau=0.3, lam=0.8, epochs=8, max_len=32,
                   teacher_bs=16, student_bs=16, lr=3e-3, fp16=False,

@@ -128,3 +128,35 @@ def test_calibrated_gate_softens_overconfident_teacher():
     cfg.gate_temp = 4.0
     _, cal = student_loss(cfg, s, t, y)
     assert cal["lam_mean"] > raw["lam_mean"]       # softer teacher -> less extreme gate
+
+
+# ---------------- context-privileged KD ------------------------------------
+def test_pair_encoding_puts_parent_first():
+    from src.context_kd import encode
+    from src.models import build_tokenizer
+    from src.context_kd import load_smoke_ctx
+    d = load_smoke_ctx(n=200)["train"]
+    tok = build_tokenizer("smoke-teacher", d["text"] + d["context"], "smoke_ctx_test")
+    enc = encode(tok, ["so true, 100% agree"], 64, ["refugees are animals"])
+    toks = tok.convert_ids_to_tokens(enc["input_ids"][0])
+    assert toks.count("[SEP]") == 2 and toks.index("refugees") < toks.index("agree")
+    alone = encode(tok, ["so true, 100% agree"], 64, [""])
+    assert "refugees" not in tok.convert_ids_to_tokens(alone["input_ids"][0])
+
+
+def test_smoke_ctx_flips_are_endorsements_under_hateful_parents():
+    from src.context_kd import load_smoke_ctx, _ENDORSE, _HATE_PARENTS
+    d = load_smoke_ctx(n=500)["train"]
+    for t, c, f in zip(d["text"], d["context"], d["flip"]):
+        assert f == int(t in _ENDORSE and c in _HATE_PARENTS)
+
+
+def test_flag_quality_and_deferral():
+    import numpy as np
+    from src.context_kd import _deferral, _flag_quality
+    flip = np.array([0, 0, 1, 1])
+    assert _flag_quality(flip, np.array([0.1, 0.2, 0.8, 0.9]))["auroc"] == 1.0
+    labels = np.array([1, 0, 1, 0] * 5)
+    logits = np.array([3.0, -3.0, 3.0, 3.0] * 5)          # every 4th sample is wrong
+    score = np.array([0, 0, 0, 1] * 5, dtype=float)        # ... and flagged
+    assert _deferral(labels, logits, score, fracs=(0.25,))["25%"]["acc"] == 1.0

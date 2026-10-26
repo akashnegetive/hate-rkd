@@ -21,6 +21,17 @@ and on Davidson fold 0 (71.2 vs. 70.3; p = 0.0007), at zero inference cost. Emoj
 SemEval, which confirms the HatEval hashtag shift. Our reproduction of RKD is 5–8 points below the
 paper's reported SemEval numbers (baselines too); see the gap analysis.
 
+## New contribution: context-privileged distillation (CP-KD)
+
+A reply like "so true, 100% agree" is hateful or harmless depending on the comment it answers.
+**CP-KD** trains a BERT teacher that reads *parent + reply* and distils it into a DistilBERT
+student that reads **only the reply**. The student also outputs a **"needs context"** score,
+learnt for free from how much the teacher's verdict changes when the parent is hidden. It stays
+as fast as a reply-only model and flags the replies that need the thread. Datasets: Reddit
+replies with parents (Yu et al., NAACL 2022) and Civil Comments in Context (Xenos et al.),
+whose human label flips test the flag. Details, novelty check and expected results:
+**[`docs/CONTEXT_KD.md`](docs/CONTEXT_KD.md)**. Run: **`notebooks/gpu_context.ipynb`**.
+
 With all switches off, the code is exactly the paper's method, so every comparison is
 like for like.
 

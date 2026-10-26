@@ -40,6 +40,9 @@ def _train_wordpiece(corpus, path, vocab_size):
 def build_tokenizer(name: str, corpus=None, key: str = ""):
     """`corpus`/`key` are only used by the from-scratch pilot models."""
     from .preprocess import denoise_remove, denoise_spn
+    if name.startswith("smoke") and key.startswith("smoke_ctx"):
+        # synthetic conversations: vocabulary from the given replies + parents
+        return _train_wordpiece(list(corpus), os.path.join(CACHE_DIR, f"tokenizer_{key}"), 400)
     if name.startswith("smoke"):
         from .data import load_smoke
         d = load_smoke(n=2000, seed=123)["train"]["text"]
@@ -52,16 +55,17 @@ def build_tokenizer(name: str, corpus=None, key: str = ""):
     return AutoTokenizer.from_pretrained(name)
 
 
-def build_model(name: str, tokenizer=None):
+def build_model(name: str, tokenizer=None, num_labels: int = 1):
+    """num_labels=1: one hate logit. num_labels=2: hate logit + needs-context logit (CP-KD student)."""
     if name in ARCH:
         kind, kw = ARCH[name]
         if kind == "bert":
-            return BertForSequenceClassification(BertConfig(vocab_size=tokenizer.vocab_size, num_labels=1,
+            return BertForSequenceClassification(BertConfig(vocab_size=tokenizer.vocab_size, num_labels=num_labels,
                                                             max_position_embeddings=128, **kw))
         return DistilBertForSequenceClassification(DistilBertConfig(vocab_size=tokenizer.vocab_size,
-                                                                    num_labels=1,
+                                                                    num_labels=num_labels,
                                                                     max_position_embeddings=128, **kw))
-    return AutoModelForSequenceClassification.from_pretrained(name, num_labels=1)
+    return AutoModelForSequenceClassification.from_pretrained(name, num_labels=num_labels)
 
 
 def load_finetuned(path: str):
