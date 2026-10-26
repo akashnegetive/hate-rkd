@@ -1,5 +1,9 @@
 # Context-privileged knowledge distillation (CP-KD)
 
+> **GPU result: negative.** See [`CONTEXT_RESULTS.md`](CONTEXT_RESULTS.md). The teacher barely
+> uses the parent, the student does not improve, and the needs-context head is worse than plain
+> uncertainty at finding context-dependent replies.
+
 **New thesis contribution.** It follows the supervisor's request after the GPU ladder showed
 only small gains (+0.8 macro-F1) for the loss-level changes.
 

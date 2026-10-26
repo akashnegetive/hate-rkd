@@ -32,6 +32,12 @@ replies with parents (Yu et al., NAACL 2022) and Civil Comments in Context (Xeno
 whose human label flips test the flag. Details, novelty check and expected results:
 **[`docs/CONTEXT_KD.md`](docs/CONTEXT_KD.md)**. Run: **`notebooks/gpu_context.ipynb`**.
 
+**GPU result: negative ([`docs/CONTEXT_RESULTS.md`](docs/CONTEXT_RESULTS.md)).** BERT gains at most
++0.9 to +1.7 macro-F1 from the parent (Reddit) and nothing on CCC, so the reply-only student does
+not improve (+0.1 / +0.2, not significant), and the needs-context head finds human
+context-dependent replies worse than the model's own uncertainty (AUROC 0.75 vs. 0.82).
+Giving the student the parent makes it worse (−2.5 / −2.9).
+
 With all switches off, the code is exactly the paper's method, so every comparison is
 like for like.
 
