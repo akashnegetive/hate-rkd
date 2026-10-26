@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 
 from src.config import PILOT, PRESETS, Config                                # noqa: E402
 from src.context_kd import (BASE, CONTEXT_METHODS, evaluate_student, load_context_splits,  # noqa: E402
-                            predict, preprocess_split, round_one_pairs, teacher_signals,
+                            normalise_delta, predict, preprocess_split, round_one_pairs, teacher_signals,
                             train_student, train_teacher, _latency)
 from src.metrics import classification_metrics                               # noqa: E402
 from src.models import build_model, build_tokenizer, load_finetuned          # noqa: E402
@@ -150,6 +150,9 @@ def main():
         acc = float(((z_ctx > 0).astype(int) == np.asarray(train["label"])).mean())
         log(f"[student] teacher train-acc={acc:.4f}  mean delta={delta.mean():.4f}  "
             f"share delta>0.3={np.mean(delta > 0.3):.3f}")
+        if cfg.ctx_head and cfg.ctx_target_norm:
+            delta = normalise_delta(delta)
+            log(f"[student] needs-context target rescaled: mean={delta.mean():.4f}")
 
     # ---- student ------------------------------------------------------------
     log(f"[student] {cfg.student_name}  reads parent: {cfg.student_context}  kd={cfg.use_kd}  "

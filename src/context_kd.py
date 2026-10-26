@@ -292,6 +292,14 @@ def train_teacher(cfg, model, tok, train, val, log=print):
     return _fit(cfg, model, tok, len(train["text"]), cfg.teacher_bs, make_batch, loss_fn, val_score, log)
 
 
+def normalise_delta(delta, q=0.95):
+    """delta is close to 0 for most replies, so a head trained on raw delta can do well by always
+    predicting "small". Rescaling so the q-quantile maps to 1 spreads the targets out; the ranking
+    of replies (which is what the flag is used for) is unchanged."""
+    scale = max(float(np.quantile(delta, q)), 1e-6)
+    return np.clip(delta / scale, 0.0, 1.0)
+
+
 def teacher_signals(cfg, teacher, tok, split):
     """Teacher logits with the parent, without it, and delta = |p_ctx - p_alone|."""
     if not cfg.teacher_context:

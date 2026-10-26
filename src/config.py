@@ -64,6 +64,7 @@ class Config:
     context_dropout: float = 0.3     # teacher training: hide the parent w.p. p (so it can judge both ways)
     ctx_head: bool = True            # student predicts "needs context" from the teacher's with/without gap
     ctx_weight: float = 0.5          # weight of the needs-context loss
+    ctx_target_norm: bool = True     # rescale delta so its 95th percentile maps to 1 (see context_kd)
     ctx_max_len: int = 256           # max tokens of "parent [SEP] reply"
 
     # ---- optimisation -----------------------------------------------------

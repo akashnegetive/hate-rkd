@@ -160,3 +160,12 @@ def test_flag_quality_and_deferral():
     logits = np.array([3.0, -3.0, 3.0, 3.0] * 5)          # every 4th sample is wrong
     score = np.array([0, 0, 0, 1] * 5, dtype=float)        # ... and flagged
     assert _deferral(labels, logits, score, fracs=(0.25,))["25%"]["acc"] == 1.0
+
+
+def test_normalise_delta_keeps_ranking_and_spreads_targets():
+    import numpy as np
+    from src.context_kd import normalise_delta
+    d = np.array([0.0, 0.01, 0.02, 0.05, 0.4])
+    n = normalise_delta(d, q=0.8)
+    assert (np.argsort(n, kind="stable") == np.argsort(d, kind="stable")).all()
+    assert n.max() == 1.0 and n[3] > d[3]

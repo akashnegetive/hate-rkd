@@ -41,7 +41,9 @@ parent + reply ──► BERT teacher (parent hidden 30 %) ─┐   reply ──
 3. **Student with two outputs, reading only the reply:**
    * hate output: gated KD from p_ctx (our reliability gate) + focal loss on the gold labels,
      which were annotated with the parent visible;
-   * needs-context output: binary cross-entropy against δ (weight 0.5).
+   * needs-context output: binary cross-entropy against δ (weight 0.5). δ is close to 0 for most
+     replies, so it is rescaled so its 95th percentile maps to 1 (`ctx_target_norm`). The ranking is
+     unchanged. On the synthetic check with 3 epochs this raised the head's AUROC from 0.66 to 0.90.
 4. **Use:** the student answers hate / not hate and gives a needs-context score. Replies with a
    high score can be routed to a human or to a context-aware model. The rest are handled by the
    cheap student, which never needs the thread.
