@@ -8,3 +8,5 @@ data/tweeteval_hate/
 .ipynb_checkpoints/
 .pytest_cache/
 runs_pilot/
+data/ccc/
+data/reddit_context/
