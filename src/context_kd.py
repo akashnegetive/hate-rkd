@@ -61,6 +61,11 @@ RC_URL = "https://raw.githubusercontent.com/xinchenyu/counter_context/main/data/
 # "1" neutral and "2" counter-speech. VERIFY against Yu et al. (2022) before reporting.
 RC_HATE_LABEL = "0"
 CCC_URL = "https://raw.githubusercontent.com/ipavlopoulos/context_toxicity/master/data/CCC.csv"
+# CCC has ~5 in-context annotators per reply, so ">0.5" (>=3 of 5) leaves only 119 toxic replies
+# (1.2 %). We call a reply toxic when >= 2 of 5 annotators say so (score >= 0.4): 467 toxic
+# with context, 914 label flips. The same rule is applied to the out-of-context labels.
+CCC_THRESHOLD = 0.4
+CCC_TEST_SIZE = 0.3     # 60/10/30 split -> ~140 toxic and ~274 context-dependent test replies
 
 # Steps of the context ladder (run-name -> settings). Each adds one thing to the previous.
 CONTEXT_METHODS = {
@@ -110,11 +115,13 @@ def load_rc(data_dir="data"):
 def load_ccc(data_dir="data", seed=42):
     df = pd.read_csv(_download(CCC_URL, os.path.join(data_dir, "ccc", "CCC.csv")))
     ic, oc = df["tox_codes_ic"].map(_codes_mean), df["tox_codes_oc"].map(_codes_mean)
-    df = df.assign(label=(ic > 0.5).astype(int), label_oc=(oc > 0.5).astype(int)).dropna(subset=["text", "parent"])
+    df = df.assign(label=(ic >= CCC_THRESHOLD).astype(int),
+                   label_oc=(oc >= CCC_THRESHOLD).astype(int)).dropna(subset=["text", "parent"])
     df["flip"] = (df["label"] != df["label_oc"]).astype(int)
     strat = df["label"] * 2 + df["flip"]
-    tr, rest = train_test_split(df, test_size=0.2, stratify=strat, random_state=seed)
-    va, te = train_test_split(rest, test_size=0.5, stratify=rest["label"] * 2 + rest["flip"], random_state=seed)
+    tr_va, te = train_test_split(df, test_size=CCC_TEST_SIZE, stratify=strat, random_state=seed)
+    tr, va = train_test_split(tr_va, test_size=0.1 / (1 - CCC_TEST_SIZE),
+                              stratify=tr_va["label"] * 2 + tr_va["flip"], random_state=seed)
     pack = lambda d: {"text": d["text"].astype(str).tolist(), "context": d["parent"].astype(str).tolist(),  # noqa: E731
                       "label": d["label"].tolist(), "label_oc": d["label_oc"].tolist(), "flip": d["flip"].tolist()}
     return {"train": pack(tr), "val": pack(va), "test": pack(te)}

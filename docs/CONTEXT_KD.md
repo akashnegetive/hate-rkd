@@ -66,12 +66,15 @@ Code: `src/context_kd.py` (data, training, evaluation), `scripts/run_context.py`
 | Name | Source | Content | Size |
 |---|---|---|---|
 | `rc` | Yu, Blanco & Hong, NAACL 2022 (`xinchenyu/counter_context`) | Reddit reply + parent; hate / counter / neutral, labelled with the parent visible. Used as hate vs. not hate. | 3,325 / 713 / 713 |
-| `ccc` | Xenos et al. 2021/2022 (`ipavlopoulos/context_toxicity`, CC0) | Civil Comments reply + parent; toxicity labelled **with** and **without** the parent | 9,929 posts, 517 (5.2 %) flip; 119 toxic with context |
+| `ccc` | Xenos et al. 2021/2022 (`ipavlopoulos/context_toxicity`, CC0) | Civil Comments reply + parent; toxicity labelled **with** (~5 annotators) and **without** the parent | 9,929 posts; toxic = ≥ 2 of 5 annotators (score ≥ 0.4): 467 toxic with context, 914 label flips |
 
 **Verify before reporting:** the `rc` label ids are not documented in the repository. `"0"`
 was taken as *hate* from reading examples (`src/context_kd.py: RC_HATE_LABEL`). Check this
-against the paper or its code. `ccc` has no official split; we use a stratified 80/10/10 split
-(seed 42, stratified by label and flip).
+against the paper or its code. `ccc` has no official split; we use a stratified **60/10/30** split
+(seed 42, stratified by label and flip), so the test set holds about 140 toxic and 274
+context-dependent replies. With the usual "> 0.5" rule (≥ 3 of 5 annotators) only 119 replies
+(1.2 %) are toxic, too few to train on (a CPU pilot teacher predicted "not toxic" for
+everything). Report the ≥ 0.4 rule as a stated design decision.
 
 ## 5. Evaluation
 
