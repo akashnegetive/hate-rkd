@@ -112,6 +112,9 @@ METHODS = {
     # Chosen from the pilot ablations: revision and class-balanced KD did not help.
     "srkd": dict(preprocess="spn_emoji", use_r1=True, use_r2=True, hard_loss="focal",
                  use_kd=True, kd_gate=True, kd_revise=False, kd_cb=False),
+    # paper's RKD + reliability gate only (no emoji change): best on GPU with BERT/DistilBERT
+    "rkd_gate": dict(preprocess="remove", use_r1=True, use_r2=True, hard_loss="focal",
+                     use_kd=True, kd_gate=True, kd_revise=False, kd_cb=False),
     # SR-KD with a calibrated gate: the gate reads a temperature-scaled teacher
     "srkd_cal": dict(preprocess="spn_emoji", use_r1=True, use_r2=True, hard_loss="focal",
                      use_kd=True, kd_gate=True, gate_calibrate=True, kd_revise=False, kd_cb=False),

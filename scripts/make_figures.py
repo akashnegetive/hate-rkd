@@ -154,13 +154,17 @@ def main():
     ap.add_argument("--baseline", default="baseline", help="ladder: L0_baseline")
     ap.add_argument("--rkd", default="rkd", help="ladder: L1_rkd")
     ap.add_argument("--ladder", action="store_true", help="shortcut for the ladder run-names")
+    ap.add_argument("--ours_label", default=None, help='legend label of our method, e.g. "RKD-S + gate (ours)"')
+    ap.add_argument("--suffix", default="", help="appended to figure file names")
     args = ap.parse_args()
     global OURS
     OURS = args.ours
     NAMES.update(baseline=args.baseline, rkd=args.rkd)
     if args.ladder:
-        OURS = "L3_gate"
+        OURS = args.ours if args.ours != "srkd" else "L3_gate"
         NAMES.update(baseline="L0_baseline", rkd="L1_rkd")
+    if args.ours_label:
+        LABELS["ours"] = args.ours_label
     rows = load(args.runs, args.dataset)
     if not rows:
         print("no student results for", args.dataset)
@@ -169,9 +173,9 @@ def main():
     os.makedirs(out, exist_ok=True)
     main_ = main_runs(rows, args.dataset)
     if main_:
-        reliability(main_, os.path.join(out, f"fig_reliability_{args.dataset}.png"))
-        settings(main_, os.path.join(out, f"fig_settings_{args.dataset}.png"))
-    ablation(rows, args.dataset, os.path.join(out, f"fig_ablation_{args.dataset}.png"))
+        reliability(main_, os.path.join(out, f"fig_reliability_{args.dataset}{args.suffix}.png"))
+        settings(main_, os.path.join(out, f"fig_settings_{args.dataset}{args.suffix}.png"))
+    ablation(rows, args.dataset, os.path.join(out, f"fig_ablation_{args.dataset}{args.suffix}.png"))
     print("figures written to", out)
 
 

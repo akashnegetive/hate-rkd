@@ -8,6 +8,11 @@ In this guide the paper's method is called **RKD** (RKD-T = teacher, RKD-S = stu
 
 ---
 
+> **Latest: GPU results with real BERT / DistilBERT are in [`GPU_RESULTS.md`](GPU_RESULTS.md) and
+> replace the pilot conclusions below.** With pretrained models, only the reliability gate helps
+> (RKD + gate: +0.8 SE, +0.9 DV macro-F1, small but consistent); emoji → text does not. The
+> recommended method is `--method rkd_gate`.
+
 > **Update after the pilot experiments (read [`PILOT_RESULTS.md`](PILOT_RESULTS.md)).**
 > We ran every idea below on the real SemEval and Davidson data. The **final method, `srkd`**,
 > keeps only what worked: **emoji → text** (hashtags are still deleted) and the **reliability

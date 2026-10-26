@@ -12,11 +12,14 @@ re-implementation of RKD and easy-to-medium, parameter-free improvements, each t
 | (tested) | Wrong soft labels; imbalance only in hard loss | label revision; class-balanced KD | no gain ❌ (negative ablations) |
 | **E** | Only accuracy/F1 reported | + **ECE calibration**, **cross-dataset**, **slices**, **McNemar** | — |
 
-**Final method `srkd` = N1 + N2.** SemEval student macro-F1: **60.8 ± 1.1 vs. 55.7 ± 3.8** for
-the paper's method (3 seeds, McNemar significant on each), with better robustness, calibration
-and cross-dataset transfer, at the same inference cost. See
-**[`docs/PILOT_RESULTS.md`](docs/PILOT_RESULTS.md)** (from-scratch CPU pilot; confirm on GPU
-with pretrained BERT).
+**GPU results with real BERT / DistilBERT ([`docs/GPU_RESULTS.md`](docs/GPU_RESULTS.md)).** The
+reliability gate added to the paper's method (`--method rkd_gate`, ladder step X6) improves the
+student on every SemEval seed (64.3 ± 1.0 vs. 63.5 ± 0.6 macro-F1; significant on 1 of 3 seeds)
+and on Davidson fold 0 (71.2 vs. 70.3; p = 0.0007), at zero inference cost. Emoji → text did
+**not** help with pretrained models, although it did in the from-scratch CPU pilot
+([`docs/PILOT_RESULTS.md`](docs/PILOT_RESULTS.md)). Keeping hashtags costs −14 macro-F1 on
+SemEval, which confirms the HatEval hashtag shift. Our reproduction of RKD is 5–8 points below the
+paper's reported SemEval numbers (baselines too); see the gap analysis.
 
 With all switches off, the code is exactly the paper's method, so every comparison is
 like for like.

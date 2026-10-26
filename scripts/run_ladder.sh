@@ -18,6 +18,7 @@
 #   TEACHER_DIR  teacher checkpoints (local disk is fine; ~420 MB each)   default $OUT/teachers
 #   CLEAN_TEACHERS=1  delete a seed's/fold's teachers once its steps are done (saves disk)
 #   EXTRA_ARGS   passed to every run, e.g. "--pilot true" (CPU) or "--epochs 3"
+#   STEPS        run only these steps, e.g. STEPS="L1_rkd X6_gate_without_emoji" (default: all)
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
@@ -29,10 +30,12 @@ TEACHER_DIR=${TEACHER_DIR:-$OUT/teachers}
 EXTRAS=${EXTRAS:-1}
 CLEAN_TEACHERS=${CLEAN_TEACHERS:-0}
 EXTRA_ARGS=${EXTRA_ARGS:-}
+STEPS=${STEPS:-}
 
 run() {   # run <name> <args...>
   local name=$1; shift
   local rn="${DATASET}_${name}_f${FOLD}_s${SEED}"
+  if [ -n "$STEPS" ] && [[ " $STEPS " != *" $name "* ]]; then return; fi
   if [ -f "${OUT}/results/${rn}__student.json" ]; then echo "[skip] ${rn}"; return; fi
   echo ">>> ${rn}"
   # shellcheck disable=SC2086
